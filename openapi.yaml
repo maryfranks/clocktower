@@ -28,7 +28,7 @@ paths:
     post:
       tags: [gateway]
       operationId: createOrResumeSession
-      summary: Create a new game session or resume an existing session
+      summary: Create a new game session, resume an existing session, or advance to the next stage
       requestBody:
         required: false
         content:
@@ -359,6 +359,10 @@ components:
         session_id:
           type: string
           nullable: true
+        advance_stage:
+          type: boolean
+          default: false
+          description: When true and the current stage is completed, increments stage_id to the next stage
 
     SessionResponse:
       type: object
