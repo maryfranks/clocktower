@@ -1,0 +1,506 @@
+openapi: 3.1.0
+info:
+  title: The Clock Tower — Observability Puzzle API
+  version: 1.0.0
+  description: >
+    Shared OpenAPI contract for The Clock Tower frontend (mock and live),
+    the public switchboard-room gateway, and internal clocktower services.
+
+servers:
+  - url: https://clocktower.littlefuzzydinos.com
+    description: Production gateway routed via Cloudflare (/api/*)
+
+tags:
+  - name: gateway
+    description: Public frontend-to-switchboard-room endpoints
+  - name: internal-regulator
+    description: Internal endpoints exposed by chime-regulator
+  - name: internal-escapement
+    description: Internal endpoints exposed by escapement-gear
+  - name: internal-cache
+    description: Internal endpoints exposed by pendulum-cache
+
+paths:
+  # ==========================================================================
+  # Public Gateway Endpoints (switchboard-room)
+  # ==========================================================================
+  /api/session:
+    post:
+      tags: [gateway]
+      operationId: createOrResumeSession
+      summary: Create a new game session or resume an existing session
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SessionRequest"
+      responses:
+        "200":
+          description: Active session state, initial gauge readings, and recent traces
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SessionResponse"
+
+  /api/action:
+    post:
+      tags: [gateway]
+      operationId: executeControlAction
+      summary: Execute a physical switchboard action (PROBE, CALIBRATE, ENGAGE, RESET)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ActionRequest"
+      responses:
+        "200":
+          description: Updated stage state, analog gauge needles, and latest trace waterfall
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ActionResponse"
+        "404":
+          description: Session not found
+
+  /api/traces/{session_id}:
+    get:
+      tags: [gateway]
+      operationId: getSessionTraces
+      summary: Retrieve up to the last 5 trace waterfalls for the Trace View selector
+      parameters:
+        - name: session_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Recent trace waterfalls (newest first, gauge.* attributes stripped)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TracesResponse"
+        "404":
+          description: Session not found
+
+  # ==========================================================================
+  # Internal Downstream Endpoints (Service-to-Service Contract)
+  # ==========================================================================
+  /internal/regulate:
+    post:
+      tags: [internal-regulator]
+      operationId: regulateStageAction
+      summary: Evaluate stage mechanics across downstream services and record trace spans
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/InternalRegulateRequest"
+      responses:
+        "200":
+          description: Evaluated subsystem state, gauge telemetry, and assembled waterfall
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalRegulateResponse"
+
+  /internal/traces/{session_id}:
+    get:
+      tags: [internal-regulator]
+      operationId: getInternalTraces
+      summary: Fetch stored trace waterfalls for a session from chime-regulator
+      parameters:
+        - name: session_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Stored trace waterfalls for the session
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TracesResponse"
+
+  /internal/tick:
+    post:
+      tags: [internal-escapement]
+      operationId: tickEscapementGear
+      summary: Simulate mechanical escapement timing, latency, and cold-start behavior
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/InternalTickRequest"
+      responses:
+        "200":
+          description: Mechanical timing result and span diagnostics
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalTickResponse"
+
+  /internal/state/{session_id}:
+    get:
+      tags: [internal-cache]
+      operationId: getCachedSessionState
+      summary: Read cached session and subsystem warmup state from pendulum-cache
+      parameters:
+        - name: session_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Current cached session state
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CachedSessionState"
+        "404":
+          description: Session state not cached
+    post:
+      tags: [internal-cache]
+      operationId: setCachedSessionState
+      summary: Persist updated session and subsystem state in pendulum-cache
+      parameters:
+        - name: session_id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CachedSessionState"
+      responses:
+        "200":
+          description: Saved session state
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CachedSessionState"
+
+components:
+  schemas:
+    ControlAction:
+      type: string
+      enum: [PROBE, CALIBRATE, ENGAGE, RESET]
+
+    SubsystemTarget:
+      type: string
+      enum:
+        - mainspring-drive
+        - chime-regulator
+        - escapement-gear
+        - pendulum-cache
+
+    GaugeReadings:
+      type: object
+      required: [mains_tension, resonance_drag, reserve_pressure]
+      properties:
+        mains_tension:
+          type: number
+          minimum: 0
+          maximum: 100
+        resonance_drag:
+          type: number
+          minimum: 0
+          maximum: 100
+        reserve_pressure:
+          type: number
+          minimum: 0
+          maximum: 100
+
+    Span:
+      type: object
+      required:
+        - span_id
+        - parent_span_id
+        - service_name
+        - operation_name
+        - start_offset_ms
+        - duration_ms
+        - status
+        - attributes
+      properties:
+        span_id:
+          type: string
+        parent_span_id:
+          type: string
+          nullable: true
+        service_name:
+          type: string
+        operation_name:
+          type: string
+        start_offset_ms:
+          type: integer
+          minimum: 0
+        duration_ms:
+          type: integer
+          minimum: 0
+        status:
+          type: string
+          enum: [OK, ERROR]
+        attributes:
+          type: object
+          description: Key-value span attributes (gauge.* keys stripped before reaching UI)
+          additionalProperties:
+            oneOf:
+              - type: string
+              - type: number
+              - type: boolean
+
+    TraceWaterfall:
+      type: object
+      required:
+        - trace_id
+        - timestamp
+        - action
+        - target
+        - total_duration_ms
+        - status
+        - spans
+      properties:
+        trace_id:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+        action:
+          $ref: "#/components/schemas/ControlAction"
+        target:
+          $ref: "#/components/schemas/SubsystemTarget"
+        total_duration_ms:
+          type: integer
+          minimum: 0
+        status:
+          type: string
+          enum: [OK, ERROR]
+        spans:
+          type: array
+          items:
+            $ref: "#/components/schemas/Span"
+
+    RealWorldParallel:
+      type: object
+      required: [title, summary, completion_takeaway]
+      properties:
+        title:
+          type: string
+        summary:
+          type: string
+        completion_takeaway:
+          type: string
+
+    FieldManualContent:
+      type: object
+      required: [stage_title, how_to_play, stage_hints, real_world_parallel]
+      properties:
+        stage_title:
+          type: string
+        how_to_play:
+          type: array
+          items:
+            type: string
+        stage_hints:
+          type: array
+          items:
+            type: string
+        real_world_parallel:
+          $ref: "#/components/schemas/RealWorldParallel"
+
+    StageState:
+      type: object
+      required:
+        - stage_id
+        - stage_completed
+        - targets
+        - selected_target
+        - slider_value
+        - chamber_logs
+        - manual
+      properties:
+        stage_id:
+          type: integer
+          minimum: 1
+          maximum: 5
+        stage_completed:
+          type: boolean
+        targets:
+          type: array
+          items:
+            $ref: "#/components/schemas/SubsystemTarget"
+        selected_target:
+          $ref: "#/components/schemas/SubsystemTarget"
+        slider_value:
+          type: integer
+          minimum: 0
+          maximum: 100
+          multipleOf: 5
+        chamber_logs:
+          type: array
+          items:
+            type: string
+        manual:
+          $ref: "#/components/schemas/FieldManualContent"
+
+    SessionRequest:
+      type: object
+      properties:
+        session_id:
+          type: string
+          nullable: true
+
+    SessionResponse:
+      type: object
+      required: [session_id, state, gauges, recent_traces]
+      properties:
+        session_id:
+          type: string
+        state:
+          $ref: "#/components/schemas/StageState"
+        gauges:
+          $ref: "#/components/schemas/GaugeReadings"
+        recent_traces:
+          type: array
+          items:
+            $ref: "#/components/schemas/TraceWaterfall"
+
+    ActionRequest:
+      type: object
+      required: [session_id, stage_id, action, target, value]
+      properties:
+        session_id:
+          type: string
+        stage_id:
+          type: integer
+          minimum: 1
+          maximum: 5
+        action:
+          $ref: "#/components/schemas/ControlAction"
+        target:
+          $ref: "#/components/schemas/SubsystemTarget"
+        value:
+          type: integer
+          minimum: 0
+          maximum: 100
+          multipleOf: 5
+
+    ActionResponse:
+      type: object
+      required: [session_id, state, gauges, latest_trace]
+      properties:
+        session_id:
+          type: string
+        state:
+          $ref: "#/components/schemas/StageState"
+        gauges:
+          $ref: "#/components/schemas/GaugeReadings"
+        latest_trace:
+          $ref: "#/components/schemas/TraceWaterfall"
+
+    TracesResponse:
+      type: object
+      required: [session_id, traces]
+      properties:
+        session_id:
+          type: string
+        traces:
+          type: array
+          maxItems: 5
+          items:
+            $ref: "#/components/schemas/TraceWaterfall"
+
+    # ========================================================================
+    # Internal Service Schemas
+    # ========================================================================
+    CachedSessionState:
+      type: object
+      required: [session_id, stage_id, warm_targets, calibrated_targets, stage_completed]
+      properties:
+        session_id:
+          type: string
+        stage_id:
+          type: integer
+        warm_targets:
+          type: array
+          items:
+            $ref: "#/components/schemas/SubsystemTarget"
+        calibrated_targets:
+          type: array
+          items:
+            $ref: "#/components/schemas/SubsystemTarget"
+        calibration_values:
+          type: object
+          additionalProperties:
+            type: integer
+        stage_completed:
+          type: boolean
+
+    InternalRegulateRequest:
+      type: object
+      required: [session_id, stage_id, action, target, value]
+      properties:
+        session_id:
+          type: string
+        stage_id:
+          type: integer
+        action:
+          $ref: "#/components/schemas/ControlAction"
+        target:
+          $ref: "#/components/schemas/SubsystemTarget"
+        value:
+          type: integer
+
+    InternalRegulateResponse:
+      type: object
+      required: [state, gauges, latest_trace]
+      properties:
+        state:
+          $ref: "#/components/schemas/StageState"
+        gauges:
+          $ref: "#/components/schemas/GaugeReadings"
+        latest_trace:
+          $ref: "#/components/schemas/TraceWaterfall"
+
+    InternalTickRequest:
+      type: object
+      required: [session_id, stage_id, action, target, value, is_warm]
+      properties:
+        session_id:
+          type: string
+        stage_id:
+          type: integer
+        action:
+          $ref: "#/components/schemas/ControlAction"
+        target:
+          $ref: "#/components/schemas/SubsystemTarget"
+        value:
+          type: integer
+        is_warm:
+          type: boolean
+
+    InternalTickResponse:
+      type: object
+      required: [duration_ms, cold_start, status, message, span]
+      properties:
+        duration_ms:
+          type: integer
+        cold_start:
+          type: boolean
+        status:
+          type: string
+          enum: [OK, ERROR]
+        message:
+          type: string
+        span:
+          $ref: "#/components/schemas/Span"

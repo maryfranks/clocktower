@@ -1,0 +1,21 @@
+// vscode workspace settings
+{
+  "workbench.colorCustomizations": {
+    "titleBar.activeBackground": "#101C24",
+    "titleBar.activeForeground": "#EDE6D6",
+    "titleBar.inactiveBackground": "#4A6B7C",
+    "titleBar.inactiveForeground": "#EDE6D6",
+    "titleBar.border": "#101C24",
+
+    "statusBar.background": "#1B2E3B",
+    "statusBar.foreground": "#EDE6D6",
+    "statusBar.noFolderBackground": "#1B2E3B",
+    "statusBar.debuggingBackground": "#1B2E3B",
+
+    "activityBar.background": "#1B2E3B",
+    "activityBar.foreground": "#EDE6D6",
+    "activityBar.inactiveForeground": "#A0BFC5",
+    "activityBar.activeBorder": "#7FA3AD"
+  }
+}
+
