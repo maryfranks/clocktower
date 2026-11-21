@@ -27,7 +27,7 @@
 |  - Flushes OpenTelemetry spans before sending HTTP responses      |
 +---------------------------------+---------------------------------+
                                   | Cloud Run IAM Authenticated
-                                  | (/internal/regulate, /internal/traces)
+                                  | (/internal/session, /internal/regulate, /internal/traces)
                                   v
 +-------------------------------------------------------------------+
 |               chime-regulator (Rule Engine & Assembler)           |
@@ -56,7 +56,7 @@
 | Component | Visibility | Responsibility |
 | :--- | :--- | :--- |
 | **`app/web`** | Public (Cloudflare Pages) | Renders the bolted-steel switchboard console, three analog chamber gauges, Engineer's Field Manual, and interactive distributed trace waterfall viewer. |
-| **`switchboard-room`** | Public (`allUsers` invoker) | Public API gateway. Validates incoming requests, forwards actions to `chime-regulator`, strips `gauge.*` telemetry attributes from traces before browser delivery, and flushes OTel spans. |
+| **`switchboard-room`** | Public (`allUsers` invoker) | Public API gateway. Exposes `/healthz` and `/api/*`, forwards requests to `chime-regulator` with OIDC tokens when `ENV=prod` or runs standalone when `CHIME_REGULATOR_MODE=mock`, strips `gauge.*` attributes before browser delivery, and flushes OTel spans. |
 | **`chime-regulator`** | Internal (IAM-restricted) | Core puzzle orchestrator. Computes `StageState` and `GaugeReadings`, coordinates downstream calls, assembles `TraceWaterfall` payloads, and maintains the rolling 5-trace history per session. |
 | **`escapement-gear`** | Internal (IAM-restricted) | Mechanical timing simulator. Models cold-start penalties (Stage 1), detuned resonance latency (Stage 2), and hidden counterweight load attributes (Stage 4). |
 | **`pendulum-cache`** | Internal (IAM-restricted) | Persistence boundary over Redis. Stores `CachedSessionState`, staggered per-target TTL keys (Stage 3), and circuit-breaker fault flags (Stage 5). |
@@ -68,7 +68,7 @@
 ### Session Initialization & Stage Progression (`POST /api/session`)
 
 1. `app/web` calls `POST /api/session` on startup (with `session_id: null` or a stored `session_id`) or when the player clicks **NEXT STAGE** inside the Field Manual (`{ session_id, advance_stage: true }`).
-2. `switchboard-room` forwards the session request to `chime-regulator`.
+2. `switchboard-room` forwards the session request to `chime-regulator` (`POST /internal/session`).
 3. `chime-regulator` queries `pendulum-cache` (`GET /internal/state/{session_id}`):
    * If no session exists, a fresh session is initialized at `stage_id = 1` and persisted via `POST /internal/state/{session_id}`.
    * If `advance_stage: true` and `stage_completed == true` (with `stage_id < 5`), `stage_id` increments to `N + 1`, stage-specific flags (`stage_completed`, `warm_targets`, `calibrated_targets`, `calibration_values`) reset, and the updated state is saved.
@@ -124,7 +124,7 @@ Browser          switchboard-room      chime-regulator      pendulum-cache      
    * `switchboard-room` acts as the egress filter, removing all keys prefixed with `gauge.` before serializing responses to the frontend.
 3. **External OTLP Export (v3 Honeycomb Roadmap):**
    * All four services initialize OpenTelemetry tracing using W3C `traceparent` context propagation across HTTP boundaries.
-   * When `HONEYCOMB_API_KEY` is present in the environment, spans export via OTLP/HTTP to Honeycomb with full `gauge.*` attributes intact; when unset, tracing fails open with zero impact on gameplay latency.
+   * When `OTEL_EXPORTER_OTLP_ENDPOINT` or `HONEYCOMB_API_KEY` is present in the environment, spans export via OTLP/HTTP with full `gauge.*` attributes intact, defaulting the endpoint to Honeycomb when only `HONEYCOMB_API_KEY` is set; when unset, tracing fails open with zero impact on gameplay latency.
 
 ---
 
