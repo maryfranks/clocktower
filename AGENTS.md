@@ -30,6 +30,7 @@ Adopt the matching role before executing specialized tasks:
 - openapi.yaml: Single source of truth for all public and internal HTTP endpoints and schemas.
 - docs/architecture.md: Service boundaries, request sequence flows, Redis TTL schema, and GCP/Cloudflare deployment topology.
 - docs/plan.md: Game mechanics, stage puzzle rules, gauge formulas, and telemetry specifications (read targeted sections per issue).
+- docs/design-system.md: frontend design specifications
 
 ### Human Only (Agents Do Not Read)
 - README.md: Human-facing portfolio overview and local quickstart.
