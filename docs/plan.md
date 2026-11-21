@@ -42,10 +42,10 @@
 * **Frontend:** Vintage naval/maritime CRT hardware-console SPA hosted on Cloudflare Pages (permanent physical switchboard controls + toggleable monochrome CRT readout screen).
 * **Backend Microservices (Python 3.12+ / FastAPI on Cloud Run, Tier 1 region):**
   * `switchboard-room` — Public gateway (mapped to `clocktower.littlefuzzydinos.com/api` behind Cloudflare), session orchestrator, and move-history outline representing the operator's electrical relay console.
-  * `mainspring-drive` — Private service; supplies primary rotational power, stage state, exhibit schematics, and warm/cold Redis cache lookups.
+  * `pendulum-cache` — Private service; supplies primary rotational power, stage state, exhibit schematics, and warm/cold Redis cache lookups.
   * `escapement-gear` — Private service; mechanical timing regulator, puzzle validator, and physical consequence delay engine (`asyncio.sleep`).
   * `chime-regulator` — Private service; strike-counting mechanism that indexes lightweight span snapshots in Upstash Redis for the in-game Span Inspector.
-* **Service-to-Service Security:** Downstream services (`mainspring-drive`, `escapement-gear`, `chime-regulator`) are deployed with `--no-allow-unauthenticated` (`roles/run.invoker` granted exclusively to `switchboard-room`'s service account). `switchboard-room` attaches Google-signed OIDC ID tokens in hosted environments (`ENV=prod`).
+* **Service-to-Service Security:** Downstream services (`pendulum-cache`, `escapement-gear`, `chime-regulator`) are deployed with `--no-allow-unauthenticated` (`roles/run.invoker` granted exclusively to `switchboard-room`'s service account). `switchboard-room` attaches Google-signed OIDC ID tokens in hosted environments (`ENV=prod`).
 * **Observability Stack (OpenTelemetry, VictoriaMetrics & Grafana):**
   * **Telemetry Emission:** All four FastAPI services emit vendor-agnostic OTLP/HTTP (`https://collector.littlefuzzydinos.com/v1/traces`) and call `provider.forceFlush()` synchronously before returning each HTTP response so scale-to-zero containers never drop or throttle spans on shutdown.
   * **Metrics & Dashboards:** The GCP `e2-micro` OTel Collector derives RED metrics (rate, errors, duration) via `span_metrics` into **VictoriaMetrics**, visualized in **Grafana** alongside trace data for operational visibility across cold starts, stage completion rates, and downstream latency.
@@ -54,7 +54,7 @@
 ### Monorepo Layout
 * `/apps/web` — Vite + React + TypeScript vintage maritime-CRT console SPA (Cloudflare Pages).
 * `/services/switchboard-room` — FastAPI gateway & session orchestrator.
-* `/services/mainspring-drive` — FastAPI power source, stage state & cache state.
+* `/services/pendulum-cache` — FastAPI power source, stage state & cache state.
 * `/services/escapement-gear` — FastAPI timing regulator, puzzle validator & delay engine.
 * `/services/chime-regulator` — FastAPI strike log & trace snapshot indexer.
 * `/packages/otel-contracts` — Shared JSON/YAML semantic convention definitions (`stage.*`, `mechanism.*`, `cache.*`, `circuit_breaker.*`).
@@ -120,7 +120,7 @@ To keep the CRT Trace Screen strictly diegetic while teaching real-world observa
 ### Stage 1: Wake the Tower
 * **Objective:** Wake the dormant downstream clockwork services from a cold state and verify all subsystems are responsive before engaging the tower.
 * **Mechanics & Telemetry:**
-  * All downstream Cloud Run services (`mainspring-drive`, `escapement-gear`, and `chime-regulator`) begin dormant (scaled to zero).
+  * All downstream Cloud Run services (`pendulum-cache`, `escapement-gear`, and `chime-regulator`) begin dormant (scaled to zero).
   * Pressing `PROBE` dispatches an initial request across the microservices, capturing cold-start boot latency and setting `container.cold_start = true` on newly initialized spans.
   * Inspecting the trace waterfall in Trace View reveals which subsystem incurred the heaviest boot delay and confirms warm responsiveness on subsequent probes.
   * Pressing `ENGAGE` succeeds once all three downstream services respond within warm baseline thresholds.
@@ -143,7 +143,7 @@ To keep the CRT Trace Screen strictly diegetic while teaching real-world observa
 ### Stage 3: Cache Warmth & TTL Decay
 * **Objective:** Pressurize all three pneumatic reserve barrels simultaneously before their staggered Redis cache TTLs expire.
 * **Mechanics & Telemetry:**
-  * Each subsystem (`mainspring-drive`, `escapement-gear`, and `chime-regulator`) relies on an ephemeral Redis key with a staggered TTL (`30s`, `20s`, and `15s` respectively).
+  * Each subsystem (`pendulum-cache`, `escapement-gear`, and `chime-regulator`) relies on an ephemeral Redis key with a staggered TTL (`30s`, `20s`, and `15s` respectively).
   * Selecting a barrel and pressing `CALIBRATE` writes its pressurized state to Redis and records `cache.hit = true` alongside `cache.ttl_remaining_ms` in the span attributes.
   * If any key expires before `ENGAGE` is flipped, that service falls back to a cache miss (`cache.hit = false`) and fails the check, requiring the player to sequence calibrations from longest TTL to shortest TTL.
 * **Analog Gauge Behavior:**
@@ -154,7 +154,7 @@ To keep the CRT Trace Screen strictly diegetic while teaching real-world observa
 ### Stage 4: Hidden Span Attributes
 * **Objective:** Balance three clockwork counterweights whose target values are omitted from the Chamber Screen and exposed only inside structured OpenTelemetry span attributes.
 * **Mechanics & Telemetry:**
-  * `mainspring-drive`, `escapement-gear`, and `chime-regulator` start out of balance, with zero target numbers displayed on the Chamber Screen.
+  * `pendulum-cache`, `escapement-gear`, and `chime-regulator` start out of balance, with zero target numbers displayed on the Chamber Screen.
   * Firing `PROBE` and expanding each child span on Trace View reveals custom attributes: `gear.nominal_load`, `gear.current_load`, and `gear.delta`.
   * Players select each subsystem, dial the notched slider to match `gear.nominal_load`, and save with `CALIBRATE` until `gear.delta == 0` across all three services before pressing `ENGAGE`.
 * **Analog Gauge Behavior:**
@@ -165,7 +165,7 @@ To keep the CRT Trace Screen strictly diegetic while teaching real-world observa
 ### Stage 5: Cascading Backpressure & Circuit Breakers
 * **Objective:** Achieve sufficient combined torque across all three subsystems without tripping the safety pawl circuit breaker.
 * **Mechanics & Telemetry:**
-  * `mainspring-drive`, `escapement-gear`, and `chime-regulator` must produce a combined torque output `>= 120` without exceeding the safety pawl's structural ceiling of `<= 150`.
+  * `pendulum-cache`, `escapement-gear`, and `chime-regulator` must produce a combined torque output `>= 120` without exceeding the safety pawl's structural ceiling of `<= 150`.
   * Pushing combined torque above `150` during `CALIBRATE` or `ENGAGE` trips the safety pawl circuit breaker on `chime-regulator`, marking `span.status = ERROR`, recording a `breaker.tripped` span event, and rejecting downstream work until cleared.
   * Once tripped, the player must flip `RESET` to bleed off the fault state in Redis before re-calibrating within the `120–150` safe operating window and pressing `ENGAGE`.
 * **Analog Gauge Behavior:**
