@@ -1,0 +1,7 @@
+- [x] Weather console surfaces, CRT, plaques, screws, and gauge faces.
+- [x] Move setting lever beside CRT; unify iron action keys with ENGAGE last.
+- [x] Reserve a fixed trace-duration column and constrain console to viewport.
+- [x] Verify controls, trace readability, and viewport fit on desktop and mobile.
+- [x] Restore a recessed metal rocker housing and deepen cast-iron instrument cutouts.
+- [x] Replace the flat selector with a compact mechanical drum and tactile step keys.
+- [x] Verify rocker, selector, key travel, and viewport fit on desktop and mobile.

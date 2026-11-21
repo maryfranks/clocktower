@@ -1,0 +1,322 @@
+@import "tailwindcss" source(none);
+@source "../src";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+/* Chart Room brand tokens (BRAND.md v2.2, dark default). */
+@theme inline {
+  --font-serif: "Spectral", "Source Serif 4", Georgia, serif;
+  --font-mono: "IBM Plex Mono", "JetBrains Mono", ui-monospace, "Courier New", monospace;
+  --radius-sm: 2px; --radius-md: 3px; --radius-lg: var(--radius);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-steel-950: #0F1114; --color-steel-900: #16181B; --color-steel-800: #1D2024; --color-steel-700: #24282D;
+  --color-steel-600: #2E333A; --color-steel-500: #3A4048; --color-steel-400: #4A4F57; --color-steel-200: #6C737E;
+  --color-brass-900: #4A3C20; --color-brass-800: #6E5A34; --color-brass-700: #96763F; --color-brass-500: #B99A63;
+  --color-brass-400: #C7A362; --color-brass-300: #E3CB92;
+  --color-paper-300: #F2EBDC; --color-paper-400: #EDE4D2; --color-paper-500: #E5DAC3; --color-paper-600: #DED2B9;
+  --color-paper-700: #C6B797; --color-paper-800: #A8977A;
+  --color-ink-050: #EDE6D6; --color-ink-100: #C6BEB0; --color-ink-300: #8C8779; --color-ink-500: #6E6455;
+  --color-ink-700: #3A322A; --color-ink-950: #221C17;
+  --color-teak-950: #1A1512; --color-teak-900: #2A211C; --color-teak-800: #3E3128; --color-teak-700: #574234; --color-teak-600: #6B4E37;
+  --color-phosphor: #5C9B6E; --color-phosphor-dim: #3D7248; --color-phosphor-ground: #0D1A12;
+  --color-fathom: #35608A; --color-fathom-bright: #4A7BA8;
+  --color-warn: #D2BD7A; --color-alarm: #B4544C; --color-alarm-bg: #2A1614;
+  --color-verdigris: oklch(0.39 0.045 163);
+  --color-oxide: oklch(0.33 0.025 65);
+  --color-dust: oklch(0.57 0.025 85);
+  --color-foxing: oklch(0.43 0.055 69);
+}
+
+:root {
+  --radius: 4px;
+  --background: #16181B; --foreground: #C6BEB0;
+  --card: #1D2024; --card-foreground: #C6BEB0;
+  --popover: #24282D; --popover-foreground: #C6BEB0;
+  --primary: #B99A63; --primary-foreground: #1A1512;
+  --secondary: #1B3322; --secondary-foreground: #EDE6D6;
+  --muted: #24282D; --muted-foreground: #8C8779;
+  --accent: #2E4A5C; --accent-foreground: #EDE6D6;
+  --destructive: #B4544C; --destructive-foreground: #C6BEB0;
+  --border: #333A41; --input: #4A4F57; --ring: #96763F;
+}
+
+@layer base {
+  * { border-color: var(--color-border); }
+  html, body { background-color: var(--color-background); color: var(--color-foreground); font-family: var(--font-mono); }
+  :focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }
+}
+
+/* ---------- Console hardware ---------- */
+@utility faceplate {
+  background:
+    radial-gradient(ellipse at 30% 0%, color-mix(in oklab, var(--color-steel-500) 40%, transparent), transparent 60%),
+    linear-gradient(180deg, var(--color-steel-700), var(--color-steel-900));
+  box-shadow: inset 0 1px 0 color-mix(in oklab, var(--color-ink-050) 12%, transparent),
+    inset 0 -2px 0 var(--color-steel-950), 0 18px 40px -12px var(--color-steel-950);
+  border: 3px solid var(--color-steel-600);
+  border-top-color: var(--color-steel-400); border-bottom-color: var(--color-steel-950);
+}
+@utility bezel {
+  background: linear-gradient(145deg, var(--color-steel-500), var(--color-steel-950));
+  box-shadow: inset 0 2px 3px color-mix(in oklab, var(--color-ink-050) 10%, transparent), inset 0 -2px 4px var(--color-steel-950), 0 1px 0 var(--color-steel-400);
+}
+@utility recess {
+  background: var(--color-steel-950);
+  box-shadow: inset 0 3px 8px var(--color-steel-950), inset 0 0 0 1px var(--color-steel-800);
+}
+@utility crt-glass {
+  background: radial-gradient(ellipse at center, color-mix(in oklab, var(--color-phosphor-ground) 80%, var(--color-steel-800)), var(--color-steel-950) 85%);
+  box-shadow: inset 0 0 40px var(--color-steel-950), inset 0 0 6px color-mix(in oklab, var(--color-phosphor) 25%, transparent);
+  border-radius: 18px / 14px;
+  position: relative; overflow: hidden;
+  &::after {
+    content: ""; position: absolute; inset: 0; pointer-events: none;
+    background: repeating-linear-gradient(0deg, color-mix(in oklab, var(--color-steel-950) 35%, transparent) 0 1px, transparent 1px 3px),
+      radial-gradient(ellipse at 25% 10%, color-mix(in oklab, var(--color-ink-050) 7%, transparent), transparent 45%);
+  }
+}
+@utility phosphor { color: var(--color-phosphor); text-shadow: 0 0 6px color-mix(in oklab, var(--color-phosphor) 30%, transparent); }
+@utility bolt {
+  width: 14px; height: 14px; border-radius: 9999px; position: absolute;
+  background: radial-gradient(circle at 35% 30%, var(--color-steel-200), var(--color-steel-500) 55%, var(--color-steel-950));
+  box-shadow: 0 1px 1px var(--color-steel-950);
+  &::before { content: ""; position: absolute; left: 2px; right: 2px; top: 6px; height: 2px; background: var(--color-steel-900); transform: rotate(-35deg); }
+}
+@utility nameplate {
+  background: linear-gradient(180deg, var(--color-brass-500), var(--color-brass-800));
+  color: var(--color-teak-950);
+  box-shadow: inset 0 1px 0 var(--color-brass-300), inset 0 -1px 0 var(--color-brass-900), 0 2px 3px var(--color-steel-950);
+  text-shadow: 0 1px 0 color-mix(in oklab, var(--color-brass-300) 60%, transparent);
+}
+@utility mech-btn {
+  background: linear-gradient(180deg, var(--color-steel-500), var(--color-steel-700));
+  color: var(--color-ink-050);
+  border: 1px solid var(--color-steel-950); border-radius: 3px;
+  box-shadow: inset 0 1px 0 var(--color-steel-200), 0 4px 0 var(--color-steel-950), 0 6px 8px -2px var(--color-steel-950);
+  transition: transform 60ms, box-shadow 60ms;
+  &:active:not(:disabled) { transform: translateY(4px); box-shadow: inset 0 1px 0 var(--color-steel-400), 0 0 0 var(--color-steel-950); }
+  &:disabled { color: var(--color-steel-400); cursor: not-allowed; }
+}
+@utility mech-btn-brass {
+  background: linear-gradient(180deg, var(--color-brass-400), var(--color-brass-700));
+  color: var(--color-teak-950);
+  box-shadow: inset 0 1px 0 var(--color-brass-300), 0 4px 0 var(--color-brass-900), 0 6px 8px -2px var(--color-steel-950);
+}
+
+/* ---------- Field manual ---------- */
+@utility parchment {
+  background:
+    radial-gradient(ellipse at 20% 0%, color-mix(in oklab, var(--color-paper-300) 70%, transparent), transparent 60%),
+    linear-gradient(180deg, var(--color-paper-400), var(--color-paper-500));
+  color: var(--color-ink-700);
+  box-shadow: 0 18px 40px -12px var(--color-steel-950), inset 0 0 60px color-mix(in oklab, var(--color-paper-800) 30%, transparent);
+}
+@utility binder-spine {
+  background: linear-gradient(90deg, var(--color-teak-900), var(--color-teak-700) 50%, var(--color-teak-900));
+}
+@utility binder-ring {
+  width: 22px; height: 12px; border-radius: 9999px;
+  background: linear-gradient(180deg, var(--color-brass-300), var(--color-brass-700));
+  box-shadow: 0 2px 2px var(--color-steel-950);
+}
+
+/* Notched lever */
+.lever { appearance: none; background: transparent; height: 18px; }
+.lever::-webkit-slider-runnable-track { height: 4px; background: var(--color-steel-200); border-radius: 1px; }
+.lever::-moz-range-track { height: 4px; background: var(--color-steel-200); }
+.lever::-webkit-slider-thumb { appearance: none; width: 16px; height: 22px; margin-top: -9px; border-radius: 2px;
+  background: linear-gradient(90deg, var(--color-brass-700), var(--color-brass-300), var(--color-brass-700)); box-shadow: 0 2px 3px var(--color-steel-950); cursor: grab; }
+.lever::-moz-range-thumb { width: 16px; height: 22px; border: 0; border-radius: 2px;
+  background: linear-gradient(90deg, var(--color-brass-700), var(--color-brass-300), var(--color-brass-700)); }
+
+/* Found hardware: wear is layered into the material, never over the controls. */
+.workspace-panels { max-height: 900px; }
+.aged-console { padding: 22px; gap: 16px; isolation: isolate; }
+.aged-console > :not(.bolt) { position: relative; z-index: 1; }
+.aged-console::before {
+  content: ""; position: absolute; inset: 0; pointer-events: none; border-radius: inherit;
+  background:
+    radial-gradient(ellipse at 8% 78%, color-mix(in oklab, var(--color-steel-950) 85%, transparent), transparent 29%),
+    radial-gradient(ellipse at 93% 9%, color-mix(in oklab, var(--color-oxide) 60%, transparent), transparent 25%),
+    radial-gradient(ellipse at 2% 2%, color-mix(in oklab, var(--color-dust) 24%, transparent), transparent 30%),
+    repeating-linear-gradient(173deg, transparent 0 43px, color-mix(in oklab, var(--color-steel-200) 13%, transparent) 44px, transparent 45px 79px),
+    repeating-linear-gradient(89deg, transparent 0 61px, color-mix(in oklab, var(--color-steel-950) 38%, transparent) 62px, transparent 63px 107px);
+  box-shadow: inset 0 0 18px 4px var(--color-steel-950), inset 0 2px 2px var(--color-dust);
+}
+.aged-console .bolt {
+  background: radial-gradient(circle at 70% 75%, var(--color-verdigris), transparent 45%), radial-gradient(circle at 35% 30%, var(--color-brass-700), var(--color-brass-900) 65%, var(--color-steel-950));
+}
+.aged-console .nameplate {
+  background: radial-gradient(ellipse at 0% 100%, var(--color-verdigris), transparent 28%), radial-gradient(ellipse at 92% 10%, var(--color-oxide), transparent 26%), repeating-linear-gradient(174deg, transparent 0 7px, color-mix(in oklab, var(--color-brass-300) 18%, transparent) 8px, transparent 9px 14px), linear-gradient(180deg, var(--color-brass-700), var(--color-brass-800));
+  box-shadow: inset 0 1px 1px var(--color-brass-700), inset 0 -2px 3px var(--color-brass-900), 0 2px 3px var(--color-steel-950);
+}
+.crt-bezel { box-shadow: inset 0 2px 3px var(--color-steel-400), inset 0 -4px 8px var(--color-steel-950), inset 0 0 0 2px color-mix(in oklab, var(--color-dust) 35%, var(--color-steel-900)); }
+.crt-glass::before {
+  content: ""; position: absolute; inset: 0; pointer-events: none;
+  background: radial-gradient(ellipse at 77% 24%, color-mix(in oklab, var(--color-dust) 8%, transparent), transparent 24%), radial-gradient(ellipse at 18% 70%, color-mix(in oklab, var(--color-phosphor) 6%, transparent), transparent 30%), repeating-linear-gradient(0deg, transparent 0 21px, color-mix(in oklab, var(--color-phosphor) 3%, transparent) 22px 23px, transparent 24px 29px);
+  box-shadow: inset 0 0 18px 5px var(--color-steel-950);
+}
+.gauge-bezel {
+  background: radial-gradient(ellipse at 12% 70%, var(--color-verdigris), transparent 32%), conic-gradient(from 25deg, var(--color-brass-900), var(--color-brass-700), var(--color-oxide), var(--color-brass-800), var(--color-brass-500), var(--color-brass-900));
+  box-shadow: inset 0 1px 2px var(--color-brass-500), inset 0 -2px 4px var(--color-steel-950), 0 2px 4px var(--color-steel-950);
+}
+.gauge-dial { width: 96px; height: 96px; }
+.instrument-button { background: transparent; color: inherit; box-shadow: none; }
+.aged-console .mech-btn {
+  background: radial-gradient(ellipse at 50% 0%, color-mix(in oklab, var(--color-steel-200) 28%, transparent), transparent 65%), repeating-linear-gradient(177deg, transparent 0 11px, color-mix(in oklab, var(--color-dust) 10%, transparent) 12px, transparent 13px 20px), linear-gradient(180deg, var(--color-steel-600), var(--color-steel-900));
+  box-shadow: inset 0 1px 1px var(--color-steel-400), inset 0 -2px 3px var(--color-steel-950), 0 3px 0 var(--color-steel-950);
+  color: var(--color-ink-100);
+}
+.rubbed-lettering { background: repeating-linear-gradient(168deg, var(--color-ink-100) 0 3px, var(--color-ink-300) 3px 4px, var(--color-ink-100) 4px 9px); background-clip: text; color: transparent; }
+.toggle-handle { background: linear-gradient(90deg, var(--color-brass-900), var(--color-brass-700), var(--color-brass-900)); box-shadow: inset 0 1px 0 var(--color-brass-500), 0 2px 3px var(--color-steel-950); }
+.vertical-track { background: linear-gradient(90deg, var(--color-steel-700), var(--color-steel-950) 35% 58%, var(--color-steel-800)); border: 1px solid var(--color-steel-950); border-radius: 2px; box-shadow: inset 1px 0 3px var(--color-dust), inset 0 0 8px var(--color-steel-950); }
+.vertical-lever { appearance: none; writing-mode: vertical-lr; direction: rtl; width: 32px; height: calc(100% - 24px); background: transparent; cursor: grab; }
+.vertical-lever::-webkit-slider-runnable-track { width: 7px; background: var(--color-steel-950); border-left: 1px solid var(--color-oxide); box-shadow: 1px 0 2px var(--color-steel-400); }
+.vertical-lever::-moz-range-track { width: 7px; background: var(--color-steel-950); }
+.vertical-lever::-webkit-slider-thumb { appearance: none; width: 32px; height: 16px; margin-left: -13px; border-radius: 2px; background: radial-gradient(ellipse at 10% 90%, var(--color-verdigris), transparent 45%), linear-gradient(180deg, var(--color-brass-700), var(--color-brass-500) 32%, var(--color-brass-900) 70%); border-bottom: 4px solid var(--color-brass-900); box-shadow: 0 3px 3px var(--color-steel-950); }
+.vertical-lever::-moz-range-thumb { width: 32px; height: 12px; border: 0; border-bottom: 4px solid var(--color-brass-900); border-radius: 2px; background: linear-gradient(180deg, var(--color-brass-700), var(--color-brass-500), var(--color-brass-900)); }
+.vertical-lever:disabled { cursor: not-allowed; }
+.stamped-notch { width: 6px; height: 1px; background: var(--color-steel-400); color: var(--color-ink-300); font-size: 7px; line-height: 1; text-indent: 8px; transform: translateY(50%); }
+.major-notch { width: 10px; }
+.lever-notches { right: 14px; }
+.trace-row { grid-template-columns: minmax(0, 42%) minmax(0, 1fr) 7ch; }
+.crt-glass .flex.justify-between { flex-wrap: wrap; column-gap: 8px; }
+@media (max-width: 1100px) { .aged-console { padding: 18px; gap: 12px; } .gauge-dial { width: 80px; height: 80px; } .screen-controls { gap: 4px; } .console-name { font-size: 9px; } .gauge-name { font-size: 8px; } }
+@media (max-width: 767px) { .aged-console { padding: 18px 12px 14px; gap: 12px; } .console-name { max-width: 72%; white-space: normal; } .gauge-dial { width: 76px; height: 76px; } .gauge-name { font-size: 7px; } .console-screen { gap: 6px; } .crt-bezel { padding: 8px; } .screen-controls { flex-direction: column; width: 55px; gap: 6px; } .mode-switch { flex-direction: row; flex-wrap: wrap; width: 55px; gap: 3px; } .mode-switch > span { font-size: 7px; } .mode-switch > button { height: 36px; width: 18px; order: 2; } .toggle-handle { height: 14px; width: 10px; } .toggle-handle.top-8 { top: 18px; } .setting-assembly { flex: 1; } .crt-glass { padding: 10px; } .crt-glass > div { font-size: 9px; } .trace-row { grid-template-columns: minmax(0, 40%) minmax(0, 1fr) 7ch; gap: 4px; font-size: 9px; } .trace-row > span:last-child { font-size: 9px; } }
+@media (max-height: 700px) { .aged-console { gap: 8px; padding: 16px 12px 12px; } .gauge-dial { width: 64px; height: 64px; } .gauge-deck { padding-block: 8px; } .workspace-panels { padding-top: 10px; } }
+@media (max-height: 500px) and (min-width: 768px) { .workspace-panels { padding: 8px 20px; gap: 24px; } .gauge-dial { width: 44px; height: 44px; } .aged-console { gap: 5px; padding: 14px 10px 8px; } .gauge-deck { padding-block: 3px; } .action-deck > button { height: 30px; } }
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition-duration: 0ms !important; animation-duration: 0ms !important; } }
+
+/* Cast housings: grain, machined lips and shadowed instrument apertures. */
+.aged-console {
+  background:
+    repeating-linear-gradient(93deg, transparent 0 2px, color-mix(in oklab, var(--color-steel-200) 5%, transparent) 2px 3px, transparent 3px 7px),
+    repeating-linear-gradient(3deg, transparent 0 3px, color-mix(in oklab, var(--color-steel-950) 20%, transparent) 3px 4px, transparent 4px 6px),
+    linear-gradient(135deg, var(--color-steel-600), var(--color-steel-800) 30%, var(--color-steel-900));
+  border-width: 5px;
+  box-shadow: inset 0 2px 1px var(--color-steel-200), inset 2px 0 2px var(--color-steel-500), inset -2px -3px 2px var(--color-steel-950), 0 8px 0 var(--color-steel-950), 0 18px 40px -12px var(--color-steel-950);
+}
+.crt-bezel {
+  border: 2px solid var(--color-steel-950);
+  border-bottom-color: var(--color-steel-400);
+  background: linear-gradient(135deg, var(--color-steel-950), var(--color-steel-600) 52%, var(--color-steel-900));
+  box-shadow: inset 3px 5px 8px var(--color-steel-950), inset -2px -2px 1px var(--color-steel-500), 0 1px 0 var(--color-steel-200);
+}
+.gauge-deck, .control-cutout {
+  border: 2px solid var(--color-steel-950);
+  border-bottom-color: var(--color-steel-500);
+  border-right-color: var(--color-steel-600);
+  background: linear-gradient(180deg, var(--color-steel-950), var(--color-steel-800));
+  box-shadow: inset 0 5px 7px var(--color-steel-950), inset 2px 0 4px var(--color-steel-950), 0 1px 0 var(--color-steel-400);
+}
+.gauge-deck::before, .control-cutout::before {
+  content: ""; position: absolute; top: -8px; inset-inline: 2px; height: 2px;
+  background: var(--color-steel-950); box-shadow: 0 1px 0 var(--color-steel-500);
+  pointer-events: none;
+}
+.control-cutout { padding: 9px 10px 12px; border-radius: 3px; }
+.control-cutout .action-deck { margin-top: 12px; }
+.rocker-housing {
+  padding: 5px; border-radius: 3px;
+  background: linear-gradient(135deg, var(--color-steel-200), var(--color-steel-600) 20%, var(--color-steel-950) 70%);
+  border: 1px solid var(--color-steel-950);
+  box-shadow: inset 0 1px 0 var(--color-steel-400), 0 2px 1px var(--color-steel-950);
+}
+.rocker-slot {
+  display: flex; background: var(--color-steel-950);
+  border: 1px solid var(--color-steel-900);
+  box-shadow: inset 2px 3px 5px var(--color-steel-950), inset -1px -1px 0 var(--color-steel-400);
+}
+.rocker-slot .toggle-handle {
+  border-top: 1px solid var(--color-brass-500); border-bottom: 3px solid var(--color-brass-900);
+  background: linear-gradient(90deg, var(--color-brass-900), var(--color-brass-500) 30%, var(--color-brass-700) 65%, var(--color-brass-900));
+  box-shadow: 2px 3px 4px var(--color-steel-950), inset 0 2px 1px var(--color-brass-700);
+}
+.rocker-grip { position: absolute; inset: 7px 2px; background: repeating-linear-gradient(0deg, var(--color-brass-900) 0 1px, transparent 1px 4px); }
+.selector-assembly { display: grid; grid-template-columns: 40px minmax(0, 1fr) 40px; gap: 10px; align-items: center; width: 100%; max-width: 320px; margin-inline: auto; }
+.drum-bezel { padding: 5px; border-radius: 3px; background: linear-gradient(135deg, var(--color-brass-700), var(--color-brass-900) 45%, var(--color-steel-950)); box-shadow: inset 0 1px 0 var(--color-brass-500), 0 2px 2px var(--color-steel-950); }
+.target-drum {
+  position: relative; display: flex; align-items: center; justify-content: center; height: 38px; overflow: hidden;
+  border: 1px solid var(--color-steel-950); border-bottom-color: var(--color-steel-500);
+  background: linear-gradient(180deg, var(--color-steel-950), var(--color-steel-600) 40%, var(--color-steel-700) 60%, var(--color-steel-950));
+  box-shadow: inset 3px 0 5px var(--color-steel-950), inset -3px 0 5px var(--color-steel-950);
+}
+.target-drum::after { content: ""; position: absolute; inset: 0; pointer-events: none; box-shadow: inset 0 7px 8px var(--color-steel-950), inset 0 -7px 8px var(--color-steel-950); }
+.drum-lettering { font-size: 10px; white-space: nowrap; color: var(--color-paper-700); text-shadow: 0 1px 1px var(--color-steel-950); animation: drum-step 140ms ease-out; }
+@keyframes drum-step { from { transform: translateY(-14px); opacity: 0.3; } to { transform: translateY(0); opacity: 1; } }
+.aged-console .mech-btn {
+  border: 2px solid var(--color-steel-950); border-top-color: var(--color-steel-400); border-left-color: var(--color-steel-500);
+  background: repeating-linear-gradient(175deg, transparent 0 8px, color-mix(in oklab, var(--color-dust) 9%, transparent) 9px, transparent 10px 16px), linear-gradient(180deg, var(--color-steel-500), var(--color-steel-700) 22%, var(--color-steel-800) 80%, var(--color-steel-950));
+  box-shadow: inset 0 2px 1px var(--color-steel-400), inset 2px 0 2px var(--color-steel-600), inset 0 -3px 1px var(--color-steel-950), 0 5px 0 var(--color-steel-950), 0 7px 4px var(--color-steel-950);
+  transition: transform 70ms ease-out, box-shadow 70ms ease-out;
+}
+.aged-console .mech-btn:active:not(:disabled) {
+  transform: translateY(4px);
+  box-shadow: inset 0 2px 3px var(--color-steel-950), inset 0 -1px 0 var(--color-steel-600), 0 1px 0 var(--color-steel-950);
+}
+.aged-console .step-switch { height: 42px; padding: 3px; flex-direction: column; gap: 1px; }
+@media (max-width: 767px) {
+  .mode-switch { width: 55px; flex-direction: column; flex-wrap: nowrap; gap: 2px; }
+  .rocker-housing { padding: 3px; }
+  .mode-switch .rocker-slot { height: 36px; width: 20px; }
+  .rocker-slot .toggle-handle { height: 14px; width: 10px; }
+  .rocker-grip { inset: 3px 2px; }
+  .control-cutout { padding: 6px 6px 10px; }
+  .selector-assembly { gap: 6px; }
+  .drum-lettering { font-size: 9px; }
+}
+@media (max-height: 700px) {
+  .control-cutout { padding-block: 5px 9px; }
+  .control-cutout .action-deck { margin-top: 8px; }
+  .target-drum { height: 30px; }
+  .aged-console .step-switch { height: 34px; }
+}
+@media (max-height: 500px) and (min-width: 768px) {
+  .control-cutout { padding-block: 3px 7px; }
+  .control-cutout .action-deck { margin-top: 6px; }
+  .control-cutout .space-y-2 > :not(:last-child) { margin-bottom: 3px; }
+}
+
+/* Machined finish: crisp 1px edges, fine grain, no gloss or airbrushed shadows. */
+.aged-console::before { background:
+  repeating-linear-gradient(90deg, transparent 0 1px, color-mix(in oklab, var(--color-steel-200) 4%, transparent) 1px 2px),
+  repeating-linear-gradient(0deg, transparent 0 2px, color-mix(in oklab, var(--color-steel-950) 10%, transparent) 2px 3px);
+  box-shadow: inset 0 0 0 1px var(--color-steel-950); }
+.aged-console { box-shadow: inset 0 1px 0 var(--color-steel-400), inset 0 -1px 0 var(--color-steel-950), 0 4px 0 var(--color-steel-950); }
+.aged-console .mech-btn, .aged-console .mech-btn:hover {
+  background: repeating-linear-gradient(90deg, transparent 0 1px, color-mix(in oklab, var(--color-steel-200) 5%, transparent) 1px 2px), var(--color-steel-800);
+  border: 1px solid var(--color-steel-950); border-top-color: var(--color-steel-500);
+  box-shadow: inset 0 1px 0 var(--color-steel-600), inset 0 -1px 0 var(--color-steel-950), 0 4px 0 var(--color-steel-950);
+}
+.aged-console .mech-btn:active:not(:disabled) { box-shadow: inset 0 2px 2px var(--color-steel-950), 0 0 0 var(--color-steel-950); }
+.drum-bezel { background: var(--color-steel-900); border: 1px solid var(--color-steel-950); border-bottom-color: var(--color-steel-500);
+  box-shadow: inset 0 2px 3px var(--color-steel-950), 0 1px 0 var(--color-steel-600); }
+.target-drum { background: var(--color-steel-950); box-shadow: inset 0 2px 4px var(--color-steel-950), inset 0 0 0 1px var(--color-steel-800); }
+.target-drum::after { box-shadow: inset 0 6px 5px -3px var(--color-steel-950), inset 0 -6px 5px -3px var(--color-steel-950); }
+.crt-bezel { background: var(--color-steel-800); border: 1px solid var(--color-steel-950); border-bottom-color: var(--color-steel-500);
+  box-shadow: inset 0 3px 4px var(--color-steel-950), 0 1px 0 var(--color-steel-600); }
+.gauge-deck, .control-cutout { background: var(--color-steel-900); border: 1px solid var(--color-steel-950); border-bottom-color: var(--color-steel-500);
+  box-shadow: inset 0 3px 4px var(--color-steel-950), 0 1px 0 var(--color-steel-600); }
+.gauge-bezel { background: var(--color-steel-700); box-shadow: inset 0 0 0 1px var(--color-steel-950), inset 0 2px 3px var(--color-steel-950), 0 1px 0 var(--color-steel-500); }
+.aged-console .bolt, .bolt { background: var(--color-steel-500); box-shadow: inset 0 0 0 1px var(--color-steel-950), inset 0 -2px 2px var(--color-steel-900), 0 1px 0 var(--color-steel-400); }
+.rocker-housing { background: var(--color-steel-800); box-shadow: inset 0 1px 0 var(--color-steel-500), 0 1px 0 var(--color-steel-950); }
+.aged-console .nameplate { box-shadow: inset 0 0 0 1px var(--color-brass-900), 0 1px 0 var(--color-steel-950); }
