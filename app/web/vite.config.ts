@@ -14,6 +14,13 @@ export default defineConfig({
     }),
     nitro({
       preset: "cloudflare-module",
+      cloudflare: {
+        wrangler: {
+          name: "clocktower",
+          workers_dev: true,
+          preview_urls: true,
+        },
+      },
     }),
     viteReact(),
     tailwindcss(),
