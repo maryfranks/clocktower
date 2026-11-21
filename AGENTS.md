@@ -9,6 +9,7 @@ Read ~/.agents/AGENTS.md as your global baseline configuration; repository-level
 - Validate all request/response payloads against `openapi.yaml`.
 - Bug fixes must include a regression test reproducing the issue before the fix.
 - Update `docs/architecture.md` or service docs in the same PR if endpoints, env vars, or state schemas change.
+- For `app/web` use `bun run` for test, lint, etc.
 
 ## Role Routing
 Adopt the matching role before executing specialized tasks:
