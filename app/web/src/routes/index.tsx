@@ -1,7 +1,19 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useCallback, useEffect, useState } from "react";
-import { advanceStage, createOrResumeSession, executeControlAction, getSessionTraces } from "@/api/clocktowerClient";
-import { SUBSYSTEM_TARGETS, type ControlAction, type GaugeReadings, type StageState, type SubsystemTarget, type TraceWaterfall } from "@/api/types";
+import {
+  advanceStage,
+  createOrResumeSession,
+  executeControlAction,
+  getSessionTraces,
+} from "@/api/clocktowerClient";
+import {
+  SUBSYSTEM_TARGETS,
+  type ControlAction,
+  type GaugeReadings,
+  type StageState,
+  type SubsystemTarget,
+  type TraceWaterfall,
+} from "@/api/types";
 import { Console } from "@/components/tower/Console";
 import { FieldManual, type ManualTab } from "@/components/tower/FieldManual";
 import { Button } from "@/components/ui/button";
@@ -10,9 +22,16 @@ export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
       { title: "The Clock Tower — An Observability Puzzle" },
-      { name: "description", content: "Wake a sleeping clock tower from its switchboard. Read the traces, find the cold gears, set the mainspring." },
+      {
+        name: "description",
+        content:
+          "Wake a sleeping clock tower from its switchboard. Read the traces, find the cold gears, set the mainspring.",
+      },
       { property: "og:title", content: "The Clock Tower — An Observability Puzzle" },
-      { property: "og:description", content: "A tactile switchboard puzzle about traces, cold starts and patient diagnosis." },
+      {
+        property: "og:description",
+        content: "A tactile switchboard puzzle about traces, cold starts and patient diagnosis.",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
     ],
@@ -26,7 +45,11 @@ const SESSION_KEY = "clocktower.session";
 function Index() {
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [state, setState] = useState<StageState | null>(null);
-  const [gauges, setGauges] = useState<GaugeReadings>({ mains_tension: 0, resonance_drag: 0, reserve_pressure: 0 });
+  const [gauges, setGauges] = useState<GaugeReadings>({
+    mains_tension: 0,
+    resonance_drag: 0,
+    reserve_pressure: 0,
+  });
   const [traces, setTraces] = useState<TraceWaterfall[]>([]);
   const [target, setTarget] = useState<SubsystemTarget>(SUBSYSTEM_TARGETS[0]!);
   const [value, setValue] = useState(50);
@@ -39,36 +62,62 @@ function Index() {
   useEffect(() => {
     createOrResumeSession({ session_id: sessionStorage.getItem(SESSION_KEY) }).then((r) => {
       sessionStorage.setItem(SESSION_KEY, r.session_id);
-      setSessionId(r.session_id); setState(r.state); setGauges(r.gauges); setTraces(r.recent_traces);
-      setTarget(r.state.selected_target); setValue(r.state.slider_value);
-      setFocus("manual"); setTab("how"); // stage start
+      setSessionId(r.session_id);
+      setState(r.state);
+      setGauges(r.gauges);
+      setTraces(r.recent_traces);
+      setTarget(r.state.selected_target);
+      setValue(r.state.slider_value);
+      setFocus("manual");
+      setTab("how"); // stage start
     });
   }, []);
 
   useEffect(() => {
-    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") setFocus((f) => (f === "console" ? "manual" : "console")); };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setFocus((f) => (f === "console" ? "manual" : "console"));
+    };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, []);
 
-  const onAction = useCallback(async (action: ControlAction) => {
-    if (!sessionId || !state) return;
-    setBusy(true);
-    try {
-      const r = await executeControlAction({ session_id: sessionId, stage_id: state.stage_id, action, target, value });
-      const wasDone = state.stage_completed;
-      setState(r.state); setGauges(r.gauges);
-      const t = await getSessionTraces(sessionId);
-      setTraces(t.traces);
-      if (action === "RESET") { setWarm(new Set()); setCalibrated(false); setFocus("manual"); setTab("how"); }
-      else {
-        const tick = r.latest_trace.spans.find((s) => s.operation_name.startsWith("tick"));
-        if (action === "PROBE" && tick?.status === "OK") setWarm((w) => new Set(w).add(target));
-        if (action === "CALIBRATE") setCalibrated(r.latest_trace.status === "OK");
+  const onAction = useCallback(
+    async (action: ControlAction) => {
+      if (!sessionId || !state) return;
+      setBusy(true);
+      try {
+        const r = await executeControlAction({
+          session_id: sessionId,
+          stage_id: state.stage_id,
+          action,
+          target,
+          value,
+        });
+        const wasDone = state.stage_completed;
+        setState(r.state);
+        setGauges(r.gauges);
+        const t = await getSessionTraces(sessionId);
+        setTraces(t.traces);
+        if (action === "RESET") {
+          setWarm(new Set());
+          setCalibrated(false);
+          setFocus("manual");
+          setTab("how");
+        } else {
+          const tick = r.latest_trace.spans.find((s) => s.operation_name.startsWith("tick"));
+          if (action === "PROBE" && tick?.status === "OK") setWarm((w) => new Set(w).add(target));
+          if (action === "CALIBRATE") setCalibrated(r.latest_trace.status === "OK");
+        }
+        if (!wasDone && r.state.stage_completed) {
+          setFocus("manual");
+          setTab("parallel");
+        }
+      } finally {
+        setBusy(false);
       }
-      if (!wasDone && r.state.stage_completed) { setFocus("manual"); setTab("parallel"); }
-    } finally { setBusy(false); }
-  }, [sessionId, state, target, value]);
+    },
+    [sessionId, state, target, value],
+  );
 
   const [advancing, setAdvancing] = useState(false);
   const onNextStage = useCallback(async () => {
@@ -76,43 +125,102 @@ function Index() {
     setAdvancing(true);
     try {
       const r = await advanceStage(sessionId);
-      setSessionId(r.session_id); setState(r.state); setGauges(r.gauges); setTraces(r.recent_traces);
-      setTarget(r.state.selected_target); setValue(r.state.slider_value);
-      setWarm(new Set()); setCalibrated(false);
-      setFocus("manual"); setTab("how");
-    } finally { setAdvancing(false); }
+      setSessionId(r.session_id);
+      setState(r.state);
+      setGauges(r.gauges);
+      setTraces(r.recent_traces);
+      setTarget(r.state.selected_target);
+      setValue(r.state.slider_value);
+      setWarm(new Set());
+      setCalibrated(false);
+      setFocus("manual");
+      setTab("how");
+    } finally {
+      setAdvancing(false);
+    }
   }, [sessionId]);
 
-  const cycle = (d: -1 | 1) => setTarget((t) => SUBSYSTEM_TARGETS[(SUBSYSTEM_TARGETS.indexOf(t) + d + 4) % 4]!);
+  const cycle = (d: -1 | 1) =>
+    setTarget((t) => SUBSYSTEM_TARGETS[(SUBSYSTEM_TARGETS.indexOf(t) + d + 4) % 4]!);
 
-  if (!state) return <main className="flex min-h-screen items-center justify-center font-mono text-xs uppercase tracking-[0.2em] text-ink-300">WINDING…</main>;
+  if (!state)
+    return (
+      <main className="flex min-h-screen items-center justify-center font-mono text-xs uppercase tracking-[0.2em] text-ink-300">
+        WINDING…
+      </main>
+    );
 
   const panelCls = (p: Panel) =>
-    `transition-all duration-500 ease-out md:min-w-0 ${focus === p
-      ? "md:flex-[6] md:opacity-100"
-      : "md:flex-[4] md:scale-[0.94] md:opacity-70 md:cursor-zoom-in md:hover:opacity-90 max-md:hidden"}`;
+    `transition-all duration-500 ease-out md:min-w-0 ${
+      focus === p
+        ? "md:flex-[6] md:opacity-100"
+        : "md:flex-[4] md:scale-[0.94] md:opacity-70 md:cursor-zoom-in md:hover:opacity-90 max-md:hidden"
+    }`;
 
-  const consoleEl = <Console state={state} gauges={gauges} traces={traces} warm={warm} busy={busy} target={target} value={value} calibrated={calibrated}
-    onTarget={cycle} onValue={setValue} onAction={onAction} />;
-  const manualEl = <FieldManual manual={state.manual} tab={tab} onTab={setTab} completed={state.stage_completed} stageId={state.stage_id} onNextStage={onNextStage} advancing={advancing} />;
+  const consoleEl = (
+    <Console
+      state={state}
+      gauges={gauges}
+      traces={traces}
+      warm={warm}
+      busy={busy}
+      target={target}
+      value={value}
+      calibrated={calibrated}
+      onTarget={cycle}
+      onValue={setValue}
+      onAction={onAction}
+    />
+  );
+  const manualEl = (
+    <FieldManual
+      manual={state.manual}
+      tab={tab}
+      onTab={setTab}
+      completed={state.stage_completed}
+      stageId={state.stage_id}
+      onNextStage={onNextStage}
+      advancing={advancing}
+    />
+  );
 
   return (
     <main className="tower-workspace h-dvh overflow-hidden bg-background">
       <h1 className="sr-only">The Clock Tower</h1>
       <div className="workspace-panels mx-auto flex h-full max-w-[1500px] items-stretch gap-6 p-3 pb-16 md:gap-10 md:p-8 md:pb-8">
         {(["console", "manual"] as Panel[]).map((p) => (
-          <div key={p} className={`${panelCls(p)} max-md:w-full ${p === "manual" ? "md:pr-8" : ""}`}
-            onClickCapture={(e) => { if (focus !== p) { e.stopPropagation(); e.preventDefault(); setFocus(p); } }}
-            aria-label={focus !== p ? `Focus ${p === "console" ? "switchboard" : "field manual"}` : undefined}>
-            <div className={`h-full min-h-0 ${focus !== p ? "md:pointer-events-none" : ""}`}>{p === "console" ? consoleEl : manualEl}</div>
+          <div
+            key={p}
+            className={`${panelCls(p)} max-md:w-full ${p === "manual" ? "md:pr-8" : ""}`}
+            onClickCapture={(e) => {
+              if (focus !== p) {
+                e.stopPropagation();
+                e.preventDefault();
+                setFocus(p);
+              }
+            }}
+            aria-label={
+              focus !== p ? `Focus ${p === "console" ? "switchboard" : "field manual"}` : undefined
+            }
+          >
+            <div className={`h-full min-h-0 ${focus !== p ? "md:pointer-events-none" : ""}`}>
+              {p === "console" ? consoleEl : manualEl}
+            </div>
           </div>
         ))}
       </div>
       {/* Mobile peek bar */}
-      <Button variant="instrument" onClick={() => setFocus(focus === "console" ? "manual" : "console")}
-        className={`fixed inset-x-0 bottom-0 z-10 flex h-12 items-center justify-between px-4 md:hidden ${focus === "console" ? "parchment font-serif" : "faceplate font-mono uppercase text-ink-100"}`}>
-        <span className="text-sm">{focus === "console" ? "Engineer's Field Manual" : "SWITCHBOARD"}</span>
-        <span className="font-mono text-[10px] tracking-[0.14em]">{state.stage_completed ? "✓ " : ""}OPEN ▲</span>
+      <Button
+        variant="instrument"
+        onClick={() => setFocus(focus === "console" ? "manual" : "console")}
+        className={`fixed inset-x-0 bottom-0 z-10 flex h-12 items-center justify-between px-4 md:hidden ${focus === "console" ? "parchment font-serif" : "faceplate font-mono uppercase text-ink-100"}`}
+      >
+        <span className="text-sm">
+          {focus === "console" ? "Engineer's Field Manual" : "SWITCHBOARD"}
+        </span>
+        <span className="font-mono text-[10px] tracking-[0.14em]">
+          {state.stage_completed ? "✓ " : ""}OPEN ▲
+        </span>
       </Button>
     </main>
   );

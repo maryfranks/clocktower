@@ -3,8 +3,10 @@ import { mockAction, mockCreateSession } from "@/api/mockStage1";
 import { stripGaugeAttributes } from "@/api/clocktowerClient";
 import { SUBSYSTEM_TARGETS, type ControlAction, type SubsystemTarget } from "@/api/types";
 
-const act = (id: string, action: ControlAction, target: SubsystemTarget, value = 50) => mockAction({ session_id: id, stage_id: 1, action, target, value });
-const tick = (r: ReturnType<typeof act>) => r.latest_trace.spans.find((s) => s.operation_name.startsWith("tick"))!;
+const act = (id: string, action: ControlAction, target: SubsystemTarget, value = 50) =>
+  mockAction({ session_id: id, stage_id: 1, action, target, value });
+const tick = (r: ReturnType<typeof act>) =>
+  r.latest_trace.spans.find((s) => s.operation_name.startsWith("tick"))!;
 
 describe("Stage 1 mock", () => {
   it("cold probe ~2000ms with cold_start, then warm ~60ms", () => {
@@ -33,6 +35,8 @@ describe("Stage 1 mock", () => {
   it("strips gauge.* attributes", () => {
     const { session_id } = mockCreateSession();
     const t = stripGaugeAttributes(act(session_id, "PROBE", "pendulum-cache").latest_trace);
-    expect(t.spans.flatMap((s) => Object.keys(s.attributes)).some((k) => k.startsWith("gauge."))).toBe(false);
+    expect(
+      t.spans.flatMap((s) => Object.keys(s.attributes)).some((k) => k.startsWith("gauge.")),
+    ).toBe(false);
   });
 });
