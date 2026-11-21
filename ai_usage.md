@@ -2,6 +2,8 @@ Learning lessons from my last project, I took a different approach with teh plan
 
 I gave the agent the real life scenarios that I wanted to teach and we came up with the idea of the broken clocktower together. It then suggested the puzzles based on real things in a clocktower, which i thought was pretty cool. It suggested controls and we fined tuned the end state UI together.
 
+I started with repo scaffolding and plenty of docs. the agent in my last project took some liberties with repo organization so I scaffolded it all out this time myself.
+
 
 
 ## Prompts:
