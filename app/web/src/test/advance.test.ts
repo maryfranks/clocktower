@@ -21,4 +21,28 @@ describe("advance_stage", () => {
     const { session_id } = mockCreateSession();
     expect(mockCreateSession(session_id, true).state.stage_id).toBe(1);
   });
+  it("caps advance_stage at stage 5", () => {
+    const { session_id } = mockCreateSession();
+    for (let s = 1; s <= 5; s++) {
+      SUBSYSTEM_TARGETS.forEach((t) =>
+        mockAction({ session_id, stage_id: s, action: "PROBE", target: t, value: 50 }),
+      );
+      mockAction({
+        session_id,
+        stage_id: s,
+        action: "CALIBRATE",
+        target: "mainspring-drive",
+        value: 75,
+      });
+      mockAction({
+        session_id,
+        stage_id: s,
+        action: "ENGAGE",
+        target: "mainspring-drive",
+        value: 75,
+      });
+      mockCreateSession(session_id, true);
+    }
+    expect(mockCreateSession(session_id).state.stage_id).toBe(5);
+  });
 });

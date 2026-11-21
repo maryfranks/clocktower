@@ -39,4 +39,29 @@ describe("Stage 1 mock", () => {
       t.spans.flatMap((s) => Object.keys(s.attributes)).some((k) => k.startsWith("gauge.")),
     ).toBe(false);
   });
+  it("handles non-mainspring calibration, overwound/slack values, engage failure reasons, and 404s", () => {
+    const { session_id } = mockCreateSession();
+    const noFit = act(session_id, "CALIBRATE", "escapement-gear", 75);
+    expect(noFit.latest_trace.status).toBe("ERROR");
+    expect(tick(noFit).attributes["calibrate.rejected"]).toBe("no_fitting");
+
+    const coldEngage = act(session_id, "ENGAGE", "mainspring-drive");
+    expect(coldEngage.latest_trace.status).toBe("ERROR");
+    expect(tick(coldEngage).attributes["engage.all_warm"]).toBe(false);
+
+    SUBSYSTEM_TARGETS.forEach((t) => act(session_id, "PROBE", t));
+
+    const unwoundEngage = act(session_id, "ENGAGE", "mainspring-drive");
+    expect(unwoundEngage.latest_trace.status).toBe("ERROR");
+    expect(tick(unwoundEngage).attributes["engage.all_warm"]).toBe(true);
+    expect(tick(unwoundEngage).attributes["engage.calibrated"]).toBe(false);
+
+    expect(act(session_id, "CALIBRATE", "mainspring-drive", 75).latest_trace.status).toBe("OK");
+    const overwound = act(session_id, "CALIBRATE", "mainspring-drive", 85);
+    expect(overwound.latest_trace.status).toBe("ERROR");
+    expect(tick(overwound).attributes["calibrate.rejected"]).toBe("overwound");
+    expect(act(session_id, "ENGAGE", "mainspring-drive").state.stage_completed).toBe(false);
+
+    expect(() => act("unknown-sess", "PROBE", "escapement-gear")).toThrow("404 Session not found");
+  });
 });
