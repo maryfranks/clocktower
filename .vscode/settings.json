@@ -15,7 +15,12 @@
     "activityBar.background": "#1B2E3B",
     "activityBar.foreground": "#EDE6D6",
     "activityBar.inactiveForeground": "#A0BFC5",
-    "activityBar.activeBorder": "#7FA3AD"
+    "activityBar.activeBorder": "#7FA3AD",
+
+    "statusBarItem.remoteBackground": "#7E858F",
+    "statusBarItem.remoteForeground": "#1D2024",
+    "statusBarItem.remoteHoverBackground": "#6C737E",
+    "statusBarItem.remoteHoverForeground": "#1D2024"
   }
 }
 
