@@ -6,6 +6,7 @@ on:
       - main
     paths:
       - "app/web/**"
+      - ".github/workflows/deploy-frontend.yaml"
 
 jobs:
   deploy:
