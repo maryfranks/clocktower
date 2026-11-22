@@ -48,8 +48,19 @@ function isH3SwallowedErrorBody(body: string): boolean {
 // CompressionStream) or set content-encoding here or in a server route: the body gets encoded
 // twice and renders garbled.
 export default {
-  async fetch(request: Request, env: unknown, ctx: unknown) {
+  async fetch(request: Request, env: { SWITCHBOARD_URL?: string }, ctx: unknown) {
     try {
+      const url = new URL(request.url);
+      if (url.pathname.startsWith("/api/")) {
+        const headers = new Headers(request.headers);
+        headers.delete("host");
+        return fetch(`${env.SWITCHBOARD_URL}${url.pathname}${url.search}`, {
+          method: request.method,
+          headers,
+          body: request.method === "GET" || request.method === "HEAD" ? null : request.body,
+        });
+      }
+
       const handler = await getServerEntry();
       const response = await handler.fetch(request, env, ctx);
       return await normalizeCatastrophicSsrResponse(response);

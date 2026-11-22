@@ -19,6 +19,9 @@ export default defineConfig({
           name: "clocktower",
           workers_dev: true,
           preview_urls: true,
+          vars: {
+            SWITCHBOARD_URL: "https://switchboard-room-802867741875.us-east1.run.app",
+          },
         },
       },
     }),

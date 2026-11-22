@@ -37,6 +37,11 @@ jobs:
         run: bun run test
 
       - name: Build
+        # Uncomment the lines below to use mock data instead of the live API in PR previews
+        # env:
+        #   VITE_USE_MOCK_API: "true"
+        run: bun run build
+
         run: bun run build
 
       - name: Deploy Preview to Cloudflare Workers
