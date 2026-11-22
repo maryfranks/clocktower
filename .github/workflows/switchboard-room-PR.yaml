@@ -1,0 +1,43 @@
+name: PR - switchboard-room
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "services/switchboard-room/**"
+      - ".github/workflows/pr-switchboard-room.yaml"
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: services/switchboard-room
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v10
+        with:
+          enable-cache: true
+          working-directory: services/switchboard-room
+
+      - name: Install dependencies
+        run: uv sync --frozen
+
+      - name: Lint with Ruff
+        run: uv run ruff check .
+
+      - name: Check formatting with Ruff
+        run: uv run ruff format --check .
+
+      - name: Typecheck with mypy
+        run: uv run mypy
+
+      - name: Run unit tests
+        run: uv run pytest
