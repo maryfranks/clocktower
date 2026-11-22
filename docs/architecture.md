@@ -56,7 +56,7 @@
 | Component | Visibility | Responsibility |
 | :--- | :--- | :--- |
 | **`app/web`** | Public (Cloudflare Pages) | Renders the bolted-steel switchboard console, three analog chamber gauges, Engineer's Field Manual, and interactive distributed trace waterfall viewer. |
-| **`switchboard-room`** | Public (`allUsers` invoker) | Public API gateway. Exposes `/healthz` and `/api/*`, forwards requests to `chime-regulator` with OIDC tokens when `ENV=prod` or runs standalone when `CHIME_REGULATOR_MODE=mock`, strips `gauge.*` attributes before browser delivery, and flushes OTel spans. |
+| **`switchboard-room`** | Public (`allUsers` invoker) | Public API gateway. Exposes `/health` and `/api/*`, forwards requests to `chime-regulator` with OIDC tokens when `ENV=prod` or runs standalone when `CHIME_REGULATOR_MODE=mock`, strips `gauge.*` attributes before browser delivery, and flushes OTel spans. |
 | **`chime-regulator`** | Internal (IAM-restricted) | Core puzzle orchestrator. Computes `StageState` and `GaugeReadings`, coordinates downstream calls, assembles `TraceWaterfall` payloads, and maintains the rolling 5-trace history per session. |
 | **`escapement-gear`** | Internal (IAM-restricted) | Mechanical timing simulator. Models cold-start penalties (Stage 1), detuned resonance latency (Stage 2), and hidden counterweight load attributes (Stage 4). |
 | **`pendulum-cache`** | Internal (IAM-restricted) | Persistence boundary over Redis. Stores `CachedSessionState`, staggered per-target TTL keys (Stage 3), and circuit-breaker fault flags (Stage 5). |

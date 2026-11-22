@@ -39,7 +39,7 @@ spec:
               value: https://collector.littlefuzzydinos.com/v1/traces
           startupProbe:
             httpGet:
-              path: /healthz
+              path: /health
               port: 8080
             initialDelaySeconds: 0
             periodSeconds: 5

@@ -31,9 +31,9 @@ def async_client(span_exporter: InMemorySpanExporter) -> httpx.AsyncClient:
     return httpx.AsyncClient(transport=transport, base_url="http://testserver")
 
 
-async def test_healthz_returns_200(async_client: httpx.AsyncClient) -> None:
+async def test_health_returns_200(async_client: httpx.AsyncClient) -> None:
     async with async_client as client:
-        response = await client.get("/healthz")
+        response = await client.get("/health")
 
     assert response.status_code == 200
     assert response.json() == {"status": "ok"}
