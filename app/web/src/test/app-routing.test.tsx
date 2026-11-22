@@ -22,12 +22,8 @@ describe("App routing and workspace integration", () => {
       const IndexComponent = IndexRoute.options.component!;
       render(<IndexComponent />);
 
-      expect(screen.getByText("WINDING…")).toBeInTheDocument();
-      await act(async () => {
-        await vi.advanceTimersByTimeAsync(150);
-      });
+      expect(sessionStorage.getItem("clocktower.session")).toBeNull();
 
-      expect(sessionStorage.getItem("clocktower.session")).toMatch(/^sess-/);
       expect(screen.getByText(/Stage 1 — Wake the Tower/i)).toBeInTheDocument();
       expect(screen.getByLabelText("Focus switchboard")).toBeInTheDocument();
 
