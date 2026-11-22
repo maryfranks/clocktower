@@ -44,15 +44,28 @@ function isH3SwallowedErrorBody(body: string): boolean {
   }
 }
 
+type RuntimeRequest = Request & {
+  runtime?: {
+    cloudflare?: {
+      env?: {
+        SWITCHBOARD_URL?: string;
+      };
+    };
+  };
+};
+
 // Hosting compresses every response at the edge. Never compress a body (gzip, brotli,
 // CompressionStream) or set content-encoding here or in a server route: the body gets encoded
 // twice and renders garbled.
 export default {
-  async fetch(request: Request, env: { SWITCHBOARD_URL?: string }, ctx: unknown) {
+  async fetch(request: RuntimeRequest, env: unknown, ctx: unknown) {
     try {
       const url = new URL(request.url);
       if (url.pathname.startsWith("/api/")) {
-        if (!env.SWITCHBOARD_URL) {
+        const switchboardUrl =
+          request.runtime?.cloudflare?.env?.SWITCHBOARD_URL ?? process.env["SWITCHBOARD_URL"];
+
+        if (!switchboardUrl) {
           return new Response(JSON.stringify({ error: "SWITCHBOARD_URL is not configured" }), {
             status: 500,
             headers: { "content-type": "application/json" },
@@ -65,7 +78,7 @@ export default {
         const accept = request.headers.get("accept");
         if (accept) headers.set("accept", accept);
 
-        const targetUrl = `${env.SWITCHBOARD_URL}${url.pathname}${url.search}`;
+        const targetUrl = `${switchboardUrl}${url.pathname}${url.search}`;
         const hasBody = request.method !== "GET" && request.method !== "HEAD";
         const body = hasBody ? await request.arrayBuffer() : null;
 
