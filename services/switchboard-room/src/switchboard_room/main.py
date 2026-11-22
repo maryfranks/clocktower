@@ -61,8 +61,8 @@ def create_app(
     app.state.downstream_client = client
     app.state.tracer_provider = provider
 
-    @app.get("/healthz")
-    async def healthz() -> dict[str, str]:
+    @app.get("/health")
+    async def health() -> dict[str, str]:
         return {"status": "ok"}
 
     @app.post("/api/session", response_model=SessionResponse)
