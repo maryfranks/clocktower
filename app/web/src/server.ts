@@ -52,12 +52,23 @@ export default {
     try {
       const url = new URL(request.url);
       if (url.pathname.startsWith("/api/")) {
+        if (!env.SWITCHBOARD_URL) {
+          return new Response(JSON.stringify({ error: "SWITCHBOARD_URL is not configured" }), {
+            status: 500,
+            headers: { "content-type": "application/json" },
+          });
+        }
+
         const headers = new Headers(request.headers);
         headers.delete("host");
-        return fetch(`${env.SWITCHBOARD_URL}${url.pathname}${url.search}`, {
+
+        const hasBody = request.method !== "GET" && request.method !== "HEAD";
+        const body = hasBody ? await request.arrayBuffer() : null;
+
+        return await fetch(`${env.SWITCHBOARD_URL}${url.pathname}${url.search}`, {
           method: request.method,
           headers,
-          body: request.method === "GET" || request.method === "HEAD" ? null : request.body,
+          body: body && body.byteLength > 0 ? body : null,
         });
       }
 
