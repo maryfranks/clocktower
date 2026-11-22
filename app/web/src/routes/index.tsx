@@ -57,7 +57,7 @@ function Index() {
   const [warm, setWarm] = useState<Set<SubsystemTarget>>(new Set());
   const [calibrated, setCalibrated] = useState(false);
 
-useEffect(() => {
+  useEffect(() => {
     const saved = sessionStorage.getItem(SESSION_KEY);
     if (!saved) return;
     createOrResumeSession({ session_id: saved }).then((r) => {
