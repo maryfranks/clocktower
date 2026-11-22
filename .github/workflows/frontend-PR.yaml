@@ -42,8 +42,6 @@ jobs:
         #   VITE_USE_MOCK_API: "true"
         run: bun run build
 
-        run: bun run build
-
       - name: Deploy Preview to Cloudflare Workers
         id: deploy
         env:
