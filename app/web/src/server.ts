@@ -59,17 +59,35 @@ export default {
           });
         }
 
-        const headers = new Headers(request.headers);
-        headers.delete("host");
+        const headers = new Headers();
+        const contentType = request.headers.get("content-type");
+        if (contentType) headers.set("content-type", contentType);
+        const accept = request.headers.get("accept");
+        if (accept) headers.set("accept", accept);
 
+        const targetUrl = `${env.SWITCHBOARD_URL}${url.pathname}${url.search}`;
         const hasBody = request.method !== "GET" && request.method !== "HEAD";
         const body = hasBody ? await request.arrayBuffer() : null;
 
-        return await fetch(`${env.SWITCHBOARD_URL}${url.pathname}${url.search}`, {
-          method: request.method,
-          headers,
-          body: body && body.byteLength > 0 ? body : null,
-        });
+        try {
+          return await fetch(targetUrl, {
+            method: request.method,
+            headers,
+            body: body && body.byteLength > 0 ? body : null,
+          });
+        } catch (proxyError) {
+          console.error("Proxy fetch failed:", proxyError);
+          return new Response(
+            JSON.stringify({
+              error: proxyError instanceof Error ? proxyError.message : String(proxyError),
+              targetUrl,
+            }),
+            {
+              status: 502,
+              headers: { "content-type": "application/json" },
+            },
+          );
+        }
       }
 
       const handler = await getServerEntry();
