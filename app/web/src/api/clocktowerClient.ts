@@ -9,7 +9,7 @@ import type {
   TracesResponse,
 } from "./types";
 
-export const USE_MOCK_API = String(import.meta.env["VITE_USE_MOCK_API"] ?? "true") !== "false";
+export const USE_MOCK_API = import.meta.env["VITE_USE_MOCK_API"] === "true";
 const BASE = (import.meta.env["VITE_API_BASE_URL"] as string | undefined) ?? "";
 
 /** UI must never see gauge.* span attributes. */
