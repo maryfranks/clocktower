@@ -103,9 +103,7 @@ async def test_http_routing_and_oidc_in_local_vs_prod_and_gauge_stripping(
     captured_requests: list[tuple[str, str | None]] = []
 
     def handler(request: httpx.Request) -> httpx.Response:
-        captured_requests.append(
-            (request.url.path, request.headers.get("authorization"))
-        )
+        captured_requests.append((request.url.path, request.headers.get("authorization")))
         if request.url.path == "/internal/session":
             return httpx.Response(
                 200,
@@ -199,9 +197,7 @@ async def test_http_routing_and_oidc_in_local_vs_prod_and_gauge_stripping(
             assert not any(k.startswith("gauge.") for k in span.attributes)
 
     expected_auth = (
-        "Bearer oidc-token-for-https://chime-regulator.internal"
-        if env_name == "prod"
-        else None
+        "Bearer oidc-token-for-https://chime-regulator.internal" if env_name == "prod" else None
     )
     assert captured_requests == [
         ("/internal/session", expected_auth),
@@ -210,9 +206,7 @@ async def test_http_routing_and_oidc_in_local_vs_prod_and_gauge_stripping(
     ]
 
     # OTel exported spans retain gauge.* attributes
-    action_spans = [
-        s for s in exporter.get_finished_spans() if s.name == "switchboard.action"
-    ]
+    action_spans = [s for s in exporter.get_finished_spans() if s.name == "switchboard.action"]
     assert len(action_spans) == 1
     attrs = action_spans[0].attributes or {}
     assert attrs.get("gauge.mains_tension") == 45.0

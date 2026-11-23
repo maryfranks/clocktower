@@ -166,8 +166,7 @@ async def test_stage1_regulate_evaluation_and_otel_spans(
         assert cold.latest_trace.status == "OK"
         assert cold.gauges.resonance_drag == 78.0
         assert any(
-            span.attributes.get("container.cold_start") is True
-            for span in cold.latest_trace.spans
+            span.attributes.get("container.cold_start") is True for span in cold.latest_trace.spans
         )
 
         # Warm PROBE on escapement-gear -> cold_start=False, lower drag
@@ -254,8 +253,7 @@ async def test_stage1_regulate_evaluation_and_otel_spans(
     regulate_spans = [s for s in finished_spans if s.name == "chime_regulator.regulate"]
     assert regulate_spans
     assert all(
-        s.attributes is not None and "gauge.mains_tension" in s.attributes
-        for s in regulate_spans
+        s.attributes is not None and "gauge.mains_tension" in s.attributes for s in regulate_spans
     )
 
 

@@ -138,9 +138,7 @@ def evaluate_stage1_action(
                 reserve_pressure=round(len(warm_targets) * 25.0, 1),
             )
             status = "ERROR"
-            log_line = (
-                "ENGAGE failed: dormant subsystems remain. Probe all targets first."
-            )
+            log_line = "ENGAGE failed: dormant subsystems remain. Probe all targets first."
 
     updated_state = CachedSessionState(
         session_id=cached.session_id,

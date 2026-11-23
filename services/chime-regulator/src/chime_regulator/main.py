@@ -173,9 +173,7 @@ def create_app(
                 await cache.set_state(body.session_id, updated_cached)
 
                 span_ctx = otel_span.get_span_context()
-                trace_id = (
-                    f"{span_ctx.trace_id:032x}" if span_ctx.trace_id != 0 else uuid4().hex
-                )
+                trace_id = f"{span_ctx.trace_id:032x}" if span_ctx.trace_id != 0 else uuid4().hex
                 waterfall = assemble_waterfall(
                     trace_id=trace_id,
                     action=body.action,
