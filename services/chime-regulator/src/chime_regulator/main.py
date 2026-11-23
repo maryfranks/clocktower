@@ -74,6 +74,7 @@ def create_app(
     app.state.trace_store = store
     app.state.tracer_provider = provider
 
+    @app.get("/health")
     @app.get("/healthz")
     async def healthz() -> dict[str, str]:
         return {"status": "ok"}
