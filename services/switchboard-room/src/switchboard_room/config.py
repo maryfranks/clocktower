@@ -16,7 +16,7 @@ class Settings:
 
     env: Environment = "local"
     chime_regulator_url: str = "http://localhost:8001"
-    chime_regulator_mode: DownstreamMode = "mock"
+    chime_regulator_mode: DownstreamMode = "http"
     otel_service_name: str = "switchboard-room"
     otel_exporter_otlp_endpoint: str | None = None
     honeycomb_api_key: str | None = None
@@ -28,8 +28,8 @@ def load_settings() -> Settings:
     raw_env = os.getenv("ENV", "local").strip().lower()
     env: Environment = "prod" if raw_env == "prod" else "local"
 
-    raw_mode = os.getenv("CHIME_REGULATOR_MODE", "mock").strip().lower()
-    mode: DownstreamMode = "http" if raw_mode == "http" else "mock"
+    raw_mode = os.getenv("CHIME_REGULATOR_MODE", "http").strip().lower()
+    mode: DownstreamMode = "mock" if raw_mode == "mock" else "http"
 
     timeout_raw = os.getenv("DOWNSTREAM_TIMEOUT_SECONDS", "5.0")
     return Settings(
