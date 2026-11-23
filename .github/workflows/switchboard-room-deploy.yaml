@@ -67,8 +67,9 @@ jobs:
         working-directory: services/switchboard-room
         env:
           SWITCHBOARD_IMAGE: ${{ steps.build.outputs.image_uri }}
+          CHIME_REGULATOR_URL: ${{ vars.CHIME_REGULATOR_URL }}
         run: |
-          envsubst '${GCP_REGION} ${GCP_RUNTIME_SA} ${SWITCHBOARD_IMAGE}' < deploy/service.yaml > /tmp/service.rendered.yaml
+          envsubst '${GCP_REGION} ${GCP_RUNTIME_SA} ${SWITCHBOARD_IMAGE} ${CHIME_REGULATOR_URL}' < deploy/service.yaml > /tmp/service.rendered.yaml
           gcloud run services replace /tmp/service.rendered.yaml \
             --project="${GCP_PROJECT_ID}" \
             --region="${GCP_REGION}"
