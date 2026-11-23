@@ -44,12 +44,65 @@ function isH3SwallowedErrorBody(body: string): boolean {
   }
 }
 
+type RuntimeRequest = Request & {
+  runtime?: {
+    cloudflare?: {
+      env?: {
+        SWITCHBOARD_URL?: string;
+      };
+    };
+  };
+};
+
 // Hosting compresses every response at the edge. Never compress a body (gzip, brotli,
 // CompressionStream) or set content-encoding here or in a server route: the body gets encoded
 // twice and renders garbled.
 export default {
-  async fetch(request: Request, env: unknown, ctx: unknown) {
+  async fetch(request: RuntimeRequest, env: unknown, ctx: unknown) {
     try {
+      const url = new URL(request.url);
+      if (url.pathname.startsWith("/api/")) {
+        const switchboardUrl =
+          request.runtime?.cloudflare?.env?.SWITCHBOARD_URL ?? process.env["SWITCHBOARD_URL"];
+
+        if (!switchboardUrl) {
+          return new Response(JSON.stringify({ error: "SWITCHBOARD_URL is not configured" }), {
+            status: 500,
+            headers: { "content-type": "application/json" },
+          });
+        }
+
+        const headers = new Headers();
+        const contentType = request.headers.get("content-type");
+        if (contentType) headers.set("content-type", contentType);
+        const accept = request.headers.get("accept");
+        if (accept) headers.set("accept", accept);
+
+        const targetUrl = `${switchboardUrl}${url.pathname}${url.search}`;
+        const hasBody = request.method !== "GET" && request.method !== "HEAD";
+        const body = hasBody ? await request.arrayBuffer() : null;
+
+        try {
+          return await fetch(targetUrl, {
+            method: request.method,
+            headers,
+            body: body && body.byteLength > 0 ? body : null,
+          });
+        } catch (proxyError) {
+          console.error("Proxy fetch failed:", proxyError);
+          return new Response(
+            JSON.stringify({
+              error: proxyError instanceof Error ? proxyError.message : String(proxyError),
+              targetUrl,
+            }),
+            {
+              status: 502,
+              headers: { "content-type": "application/json" },
+            },
+          );
+        }
+      }
+
       const handler = await getServerEntry();
       const response = await handler.fetch(request, env, ctx);
       return await normalizeCatastrophicSsrResponse(response);

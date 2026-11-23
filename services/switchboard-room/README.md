@@ -35,3 +35,11 @@ uv run uvicorn switchboard_room.main:app --port 8001 --reload
 ```bash
 uv run pytest
 ```
+
+### Docker Build
+
+To build the image, run
+```bash
+docker build -f services/switchboard-room/deploy/Dockerfile services/switchboard-room
+```
+from the root of the repo.

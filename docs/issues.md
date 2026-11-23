@@ -4,9 +4,9 @@
 
 ### Bootstrap switchboard-room gateway service with Stage 1 endpoints and mocked downstream client
 Target: /services/switchboard-room
-Summary: Scaffold Python 3.12+ / FastAPI gateway service (switchboard-room) implementing public OpenAPI contract (/api/session, /api/action, /api/traces/{session_id}) and /healthz, with OTel OTLP/HTTP trace emission (forceFlush before response) and ENV=local / ENV=prod OIDC token handling. Back downstream calls to chime-regulator (/internal/regulate, /internal/traces/{session_id}) with a swappable mock client returning valid Stage 1 responses.
+Summary: Scaffold Python 3.12+ / FastAPI gateway service (switchboard-room) implementing public OpenAPI contract (/api/session, /api/action, /api/traces/{session_id}) and /health, with OTel OTLP/HTTP trace emission (forceFlush before response) and ENV=local / ENV=prod OIDC token handling. Back downstream calls to chime-regulator (/internal/regulate, /internal/traces/{session_id}) with a swappable mock client returning valid Stage 1 responses.
 Desired Outcome:
-- Runs locally and passes offline pytest + httpx.AsyncClient unit tests for /healthz, POST /api/session, POST /api/action (Stage 1 PROBE, CALIBRATE, ENGAGE, RESET), and GET /api/traces/{session_id}.
+- Runs locally and passes offline pytest + httpx.AsyncClient unit tests for /health, POST /api/session, POST /api/action (Stage 1 PROBE, CALIBRATE, ENGAGE, RESET), and GET /api/traces/{session_id}.
 - Strips any gauge.* span attributes before responses leave the gateway.
 - Emits and flushes OTel spans synchronously per request, verified with an in-memory span exporter in tests.
 - All request/response payloads strictly conform to openapi.yaml.
@@ -14,7 +14,7 @@ Desired Outcome:
 
 ### Bootstrap chime-regulator service for Stage 1 evaluation and trace indexing, and wire to switchboard-room
 Target: /services/chime-regulator, /services/switchboard-room
-Summary: Scaffold FastAPI chime-regulator service implementing /internal/regulate, /internal/traces/{session_id}, and /healthz, with OTel tracing (forceFlush) and redis.asyncio storage keeping up to the last 5 trace waterfalls per session. Implement Stage 1 evaluation logic using mocked clients for escapement-gear (/internal/tick) and pendulum-cache (/internal/state/{session_id}), then update switchboard-room to call chime-regulator over HTTP instead of its local mock.
+Summary: Scaffold FastAPI chime-regulator service implementing /internal/regulate, /internal/traces/{session_id}, and /health, with OTel tracing (forceFlush) and redis.asyncio storage keeping up to the last 5 trace waterfalls per session. Implement Stage 1 evaluation logic using mocked clients for escapement-gear (/internal/tick) and pendulum-cache (/internal/state/{session_id}), then update switchboard-room to call chime-regulator over HTTP instead of its local mock.
 Desired Outcome:
 - Runs locally and passes offline pytest unit tests using fakeredis and an in-memory OTel span exporter.
 - POST /internal/regulate evaluates Stage 1 actions against mocked escapement-gear and pendulum-cache responses, indexes the resulting TraceWaterfall in Redis (capped at 5 newest traces per session), and returns updated StageState, GaugeReadings, and latest_trace conforming to openapi.yaml.
@@ -23,7 +23,7 @@ Desired Outcome:
 
 ### Bootstrap escapement-gear service with Stage 1 cold-start timing engine, and wire to chime-regulator
 Target: /services/escapement-gear, /services/chime-regulator
-Summary: Scaffold FastAPI escapement-gear service implementing /internal/tick and /healthz, with OTel tracing (forceFlush) and Stage 1 cold-start detection (container.cold_start = true on initial wake-up, warm baseline latency thereafter). Update chime-regulator to call escapement-gear over HTTP instead of its mock while keeping pendulum-cache mocked.
+Summary: Scaffold FastAPI escapement-gear service implementing /internal/tick and /health, with OTel tracing (forceFlush) and Stage 1 cold-start detection (container.cold_start = true on initial wake-up, warm baseline latency thereafter). Update chime-regulator to call escapement-gear over HTTP instead of its mock while keeping pendulum-cache mocked.
 Desired Outcome:
 - Runs locally and passes offline pytest unit tests verifying POST /internal/tick returns InternalTickResponse (conforming to openapi.yaml) with accurate cold_start, duration_ms, and span metadata (container.cold_start).
 - Subsequent calls within a warm instance report warm latency and cold_start = false.
@@ -31,7 +31,7 @@ Desired Outcome:
 
 ### Bootstrap pendulum-cache service with Redis session state, and wire chime-regulator for end-to-end Stage 1
 Target: /services/pendulum-cache, /services/chime-regulator
-Summary: Scaffold FastAPI pendulum-cache service implementing GET /internal/state/{session_id}, POST /internal/state/{session_id}, and /healthz, backed by redis.asyncio with bounded TTLs and OTel tracing (forceFlush). Replace the final mock in chime-regulator with live HTTP calls to pendulum-cache so Stage 1 executes end-to-end across all four services.
+Summary: Scaffold FastAPI pendulum-cache service implementing GET /internal/state/{session_id}, POST /internal/state/{session_id}, and /health, backed by redis.asyncio with bounded TTLs and OTel tracing (forceFlush). Replace the final mock in chime-regulator with live HTTP calls to pendulum-cache so Stage 1 executes end-to-end across all four services.
 Desired Outcome:
 - Runs locally and passes offline pytest unit tests using fakeredis for GET (returning 404 when uncached) and POST /internal/state/{session_id} (CachedSessionState conforming to openapi.yaml).
 - chime-regulator persists and reads session warmup/completion state through pendulum-cache over HTTP (with ENV=local / ENV=prod OIDC handling), removing all remaining downstream service mocks.

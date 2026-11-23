@@ -17,6 +17,7 @@ import {
 import { Console } from "@/components/tower/Console";
 import { FieldManual, type ManualTab } from "@/components/tower/FieldManual";
 import { Button } from "@/components/ui/button";
+import { mockCreateSession } from "@/api/mockStage1";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -43,16 +44,13 @@ type Panel = "console" | "manual";
 const SESSION_KEY = "clocktower.session";
 
 function Index() {
+  const [initial] = useState(() => mockCreateSession());
   const [sessionId, setSessionId] = useState<string | null>(null);
-  const [state, setState] = useState<StageState | null>(null);
-  const [gauges, setGauges] = useState<GaugeReadings>({
-    mains_tension: 0,
-    resonance_drag: 0,
-    reserve_pressure: 0,
-  });
-  const [traces, setTraces] = useState<TraceWaterfall[]>([]);
-  const [target, setTarget] = useState<SubsystemTarget>(SUBSYSTEM_TARGETS[0]!);
-  const [value, setValue] = useState(50);
+  const [state, setState] = useState<StageState>(initial.state);
+  const [gauges, setGauges] = useState<GaugeReadings>(initial.gauges);
+  const [traces, setTraces] = useState<TraceWaterfall[]>(initial.recent_traces);
+  const [target, setTarget] = useState<SubsystemTarget>(initial.state.selected_target);
+  const [value, setValue] = useState(initial.state.slider_value);
   const [busy, setBusy] = useState(false);
   const [focus, setFocus] = useState<Panel>("manual");
   const [tab, setTab] = useState<ManualTab>("how");
@@ -60,7 +58,9 @@ function Index() {
   const [calibrated, setCalibrated] = useState(false);
 
   useEffect(() => {
-    createOrResumeSession({ session_id: sessionStorage.getItem(SESSION_KEY) }).then((r) => {
+    const saved = sessionStorage.getItem(SESSION_KEY);
+    if (!saved) return;
+    createOrResumeSession({ session_id: saved }).then((r) => {
       sessionStorage.setItem(SESSION_KEY, r.session_id);
       setSessionId(r.session_id);
       setState(r.state);
@@ -83,11 +83,20 @@ function Index() {
 
   const onAction = useCallback(
     async (action: ControlAction) => {
-      if (!sessionId || !state) return;
       setBusy(true);
       try {
+        let activeSessionId = sessionId;
+        if (!activeSessionId) {
+          const session = await createOrResumeSession({
+            session_id: sessionStorage.getItem(SESSION_KEY),
+          });
+          sessionStorage.setItem(SESSION_KEY, session.session_id);
+          activeSessionId = session.session_id;
+          setSessionId(session.session_id);
+        }
+
         const r = await executeControlAction({
-          session_id: sessionId,
+          session_id: activeSessionId,
           stage_id: state.stage_id,
           action,
           target,
@@ -96,7 +105,7 @@ function Index() {
         const wasDone = state.stage_completed;
         setState(r.state);
         setGauges(r.gauges);
-        const t = await getSessionTraces(sessionId);
+        const t = await getSessionTraces(activeSessionId);
         setTraces(t.traces);
         if (action === "RESET") {
           setWarm(new Set());
@@ -142,13 +151,6 @@ function Index() {
 
   const cycle = (d: -1 | 1) =>
     setTarget((t) => SUBSYSTEM_TARGETS[(SUBSYSTEM_TARGETS.indexOf(t) + d + 4) % 4]!);
-
-  if (!state)
-    return (
-      <main className="flex min-h-screen items-center justify-center font-mono text-xs uppercase tracking-[0.2em] text-ink-300">
-        WINDING…
-      </main>
-    );
 
   const panelCls = (p: Panel) =>
     `transition-all duration-500 ease-out md:min-w-0 ${
