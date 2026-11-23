@@ -32,9 +32,9 @@ spec:
             - name: ENV
               value: prod
             - name: CHIME_REGULATOR_MODE
-              value: mock
+              value: http
             - name: CHIME_REGULATOR_URL
-              value: ""
+              value: ${CHIME_REGULATOR_URL}
             - name: OTEL_EXPORTER_OTLP_ENDPOINT
               value: https://collector.littlefuzzydinos.com/v1/traces
           startupProbe:
