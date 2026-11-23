@@ -1,0 +1,43 @@
+name: PR - chime-regulator
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "services/chime-regulator/**"
+      - ".github/workflows/chime-regulator-PR.yaml"
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: services/chime-regulator
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v10.3.3
+        with:
+          enable-cache: true
+          working-directory: services/chime-regulator
+
+      - name: Install dependencies
+        run: uv sync --frozen
+
+      - name: Lint with Ruff
+        run: uv run ruff check .
+
+      - name: Check formatting with Ruff
+        run: uv run ruff format --check .
+
+      - name: Typecheck with mypy
+        run: uv run mypy
+
+      - name: Run unit tests
+        run: uv run pytest

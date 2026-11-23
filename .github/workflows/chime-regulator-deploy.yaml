@@ -1,0 +1,98 @@
+name: Deploy - chime-regulator
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "services/chime-regulator/**"
+      - ".github/workflows/chime-regulator-deploy.yaml"
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  SERVICE_NAME: chime-regulator
+  GCP_PROJECT_ID: ${{ vars.GCP_PROJECT_ID }}
+  GCP_REGION: ${{ vars.GCP_REGION }}
+  AR_REPOSITORY: ${{ vars.AR_REPOSITORY }}
+  CHIME_REGULATOR_RUNTIME_SA: ${{ vars.CHIME_REGULATOR_RUNTIME_SA }}
+  UPSTASH_REDIS_SECRET_NAME: ${{ vars.UPSTASH_REDIS_SECRET_NAME }}
+  GCP_RUNTIME_SA: ${{ vars.GCP_RUNTIME_SA }}
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v10.3.3
+        with:
+          enable-cache: true
+          working-directory: services/chime-regulator
+
+      - name: Install dependencies and verify code
+        working-directory: services/chime-regulator
+        run: |
+          uv sync --frozen
+          uv run ruff check .
+          uv run ruff format --check .
+          uv run mypy
+          uv run pytest
+
+      - name: Authenticate to Google Cloud
+        id: auth
+        uses: google-github-actions/auth@v3
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WIF_PROVIDER }}
+          service_account: ${{ secrets.GCP_DEPLOYER_SA }}
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v3
+
+      - name: Configure Docker for Artifact Registry
+        run: gcloud auth configure-docker "${GCP_REGION}-docker.pkg.dev" --quiet
+
+      - name: Build and push container image
+        id: build
+        working-directory: services/chime-regulator
+        run: |
+          IMAGE_URI="${GCP_REGION}-docker.pkg.dev/${GCP_PROJECT_ID}/${AR_REPOSITORY}/${SERVICE_NAME}:${GITHUB_SHA}"
+          docker build -f deploy/Dockerfile -t "${IMAGE_URI}" .
+          docker push "${IMAGE_URI}"
+          echo "image_uri=${IMAGE_URI}" >> "${GITHUB_OUTPUT}"
+
+      - name: Render and deploy Cloud Run service
+        working-directory: services/chime-regulator
+        env:
+          CHIME_REGULATOR_IMAGE: ${{ steps.build.outputs.image_uri }}
+        run: |
+          envsubst '${GCP_REGION} ${CHIME_REGULATOR_RUNTIME_SA} ${CHIME_REGULATOR_IMAGE} ${UPSTASH_REDIS_SECRET_NAME}' < deploy/service.yaml > /tmp/service.rendered.yaml
+          gcloud run services replace /tmp/service.rendered.yaml \
+            --project="${GCP_PROJECT_ID}" \
+            --region="${GCP_REGION}"
+
+      - name: Grant invoker access exclusively to switchboard-room
+        run: |
+          gcloud run services add-iam-policy-binding "${SERVICE_NAME}" \
+            --project="${GCP_PROJECT_ID}" \
+            --region="${GCP_REGION}" \
+            --member="serviceAccount:${GCP_RUNTIME_SA}" \
+            --role="roles/run.invoker"
+
+      - name: Verify private service URL and unauthenticated rejection
+        run: |
+          SERVICE_URL=$(gcloud run services describe "${SERVICE_NAME}" \
+            --project="${GCP_PROJECT_ID}" \
+            --region="${GCP_REGION}" \
+            --format="value(status.url)")
+          echo "Deployed URL: ${SERVICE_URL}"
+          STATUS=$(curl --silent --output /dev/null --write-out "%{http_code}" "${SERVICE_URL}/health")
+          echo "Unauthenticated /health HTTP status: ${STATUS}"
+          if [ "${STATUS}" != "401" ] && [ "${STATUS}" != "403" ]; then
+            echo "Expected 401 or 403 for unauthenticated request, got ${STATUS}"
+            exit 1
+          fi
