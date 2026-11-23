@@ -18,7 +18,6 @@ env:
   GCP_REGION: ${{ vars.GCP_REGION }}
   AR_REPOSITORY: ${{ vars.AR_REPOSITORY }}
   CHIME_REGULATOR_RUNTIME_SA: ${{ vars.CHIME_REGULATOR_RUNTIME_SA }}
-  UPSTASH_REDIS_SECRET_NAME: ${{ vars.UPSTASH_REDIS_SECRET_NAME }}
   GCP_RUNTIME_SA: ${{ vars.GCP_RUNTIME_SA }}
 
 jobs:
@@ -70,7 +69,7 @@ jobs:
         env:
           CHIME_REGULATOR_IMAGE: ${{ steps.build.outputs.image_uri }}
         run: |
-          envsubst '${GCP_REGION} ${CHIME_REGULATOR_RUNTIME_SA} ${CHIME_REGULATOR_IMAGE} ${UPSTASH_REDIS_SECRET_NAME}' < deploy/service.yaml > /tmp/service.rendered.yaml
+          envsubst '${GCP_REGION} ${CHIME_REGULATOR_RUNTIME_SA} ${CHIME_REGULATOR_IMAGE}' < deploy/service.yaml > /tmp/service.rendered.yaml
           gcloud run services replace /tmp/service.rendered.yaml \
             --project="${GCP_PROJECT_ID}" \
             --region="${GCP_REGION}"

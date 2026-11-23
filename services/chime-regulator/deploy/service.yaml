@@ -35,11 +35,6 @@ spec:
               value: chime-regulator
             - name: OTEL_EXPORTER_OTLP_ENDPOINT
               value: https://collector.littlefuzzydinos.com/v1/traces
-            - name: REDIS_URL
-              valueFrom:
-                secretKeyRef:
-                  name: ${UPSTASH_REDIS_SECRET_NAME}
-                  key: latest
           startupProbe:
             httpGet:
               path: /health
