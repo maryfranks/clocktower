@@ -24,7 +24,10 @@ async def test_spans_are_emitted_and_flushed_synchronously_per_request() -> None
     flush_spy = MagicMock(side_effect=original_flush)
     provider.force_flush = flush_spy  # type: ignore[method-assign]
 
-    app = create_app(settings=Settings(env="local"), tracer_provider=provider)
+    app = create_app(
+        settings=Settings(env="local", chime_regulator_mode="mock"),
+        tracer_provider=provider,
+    )
     async with httpx.AsyncClient(
         transport=httpx.ASGITransport(app=app),
         base_url="http://testserver",
@@ -67,7 +70,10 @@ async def test_gauge_attributes_stripped_from_responses_but_preserved_on_otel_sp
     provider = TracerProvider()
     provider.add_span_processor(BatchSpanProcessor(exporter, schedule_delay_millis=60_000))
 
-    app = create_app(settings=Settings(env="local"), tracer_provider=provider)
+    app = create_app(
+        settings=Settings(env="local", chime_regulator_mode="mock"),
+        tracer_provider=provider,
+    )
     async with httpx.AsyncClient(
         transport=httpx.ASGITransport(app=app),
         base_url="http://testserver",

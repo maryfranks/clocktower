@@ -26,7 +26,10 @@ def span_exporter() -> InMemorySpanExporter:
 def async_client(span_exporter: InMemorySpanExporter) -> httpx.AsyncClient:
     provider = TracerProvider()
     provider.add_span_processor(SimpleSpanProcessor(span_exporter))
-    app = create_app(settings=Settings(env="local"), tracer_provider=provider)
+    app = create_app(
+        settings=Settings(env="local", chime_regulator_mode="mock"),
+        tracer_provider=provider,
+    )
     transport = httpx.ASGITransport(app=app)
     return httpx.AsyncClient(transport=transport, base_url="http://testserver")
 

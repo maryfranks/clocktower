@@ -2,8 +2,10 @@
 
 from __future__ import annotations
 
+import logging
 from typing import Annotated
 
+import httpx
 from fastapi import Body, FastAPI, HTTPException
 from opentelemetry.sdk.trace import TracerProvider
 
@@ -29,6 +31,8 @@ from switchboard_room.telemetry import (
     record_gauge_attributes,
     strip_gauge_attributes,
 )
+
+logger = logging.getLogger(__name__)
 
 
 def _build_downstream_client(settings: Settings) -> ChimeRegulatorClient:
@@ -122,6 +126,14 @@ def create_app(
                     resp = await client.get_traces(session_id)
                 except SessionNotFoundError as exc:
                     raise HTTPException(status_code=404, detail=str(exc)) from exc
+                except httpx.HTTPError:
+                    logger.warning(
+                        "Failed to fetch traces from chime-regulator for session %s; "
+                        "degrading gracefully",
+                        session_id,
+                        exc_info=True,
+                    )
+                    return TracesResponse(session_id=session_id, traces=[])
 
                 stripped_traces = [strip_gauge_attributes(trace) for trace in resp.traces[:5]]
                 return TracesResponse(session_id=resp.session_id, traces=stripped_traces)

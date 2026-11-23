@@ -109,7 +109,7 @@ Browser          switchboard-room      chime-regulator      pendulum-cache      
   * Primary session document stored under `clocktower:session:{session_id}` with a bounded sliding TTL so abandoned sessions expire automatically without manual cleanup.
   * Stage 3 staggered pneumatic reserve keys stored under `clocktower:reserve:{session_id}:{target}` with target-specific Redis TTLs (`30s`, `20s`, `15s`) so cache expiration is driven natively by Redis key expiry.
 * **Rolling Trace Buffer (`chime-regulator`):**
-  * Stores up to the 5 most recent `TraceWaterfall` objects per `session_id` (newest first) to power the UI's Trace View selector via `GET /api/traces/{session_id}`.
+  * Stores up to `TRACE_HISTORY_LIMIT` (default `5`) most recent `TraceWaterfall` objects per `session_id` (newest first) in Redis under `clocktower:traces:{session_id}` with `TRACE_TTL_SECONDS` (default `3600s`) via `REDIS_URL`, degrading gracefully if Redis is unavailable, to power `GET /api/traces/{session_id}`.
 * **Stateless Cloud Run Compatibility:**
   * No gameplay state required across requests is pinned solely to local process memory; circuit-breaker trips (Stage 5) and target warmups persist in Redis so requests routed across distinct Cloud Run instances behave deterministically.
 
